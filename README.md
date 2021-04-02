@@ -30,10 +30,3 @@ This builds and runs an exported impulse locally on your machine. See the docume
     ```
     $ ./build/edge-impulse-standalone features.txt
     ```
-
-## Rebuilding the ARMv7 libraries (works on my Mac)
-
-```
-$ docker build -t tflite-downloader-armv7 -f Dockerfile.armv7 .
-$ docker run --rm -it -v $PWD:/out tflite-downloader-armv7 /bin/bash /out/tflite-extract-armv7.sh
-```
