@@ -12,3 +12,4 @@ convert/
 output.*.txt
 out/
 features*.txt
+opencv/

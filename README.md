@@ -15,9 +15,19 @@ To build an application:
 1. Export your trained impulse as a C++ Library from the Edge Impulse Studio (see the **Deployment** page) and copy them into this repository.
 1. Install the dependencies:
 
+    **Linux**
+
     ```
-    $ sudo apt install libasound2
+    $ sudo apt install libasound2 libopencv-dev
     ```
+
+    **macOS**
+
+    ```
+    $ sh build-opencv-mac.sh
+    ```
+
+    Note that you cannot run any of the audio examples on macOS, as these depend on libasound2, which is not available there.
 
 1. Build the application via:
 
