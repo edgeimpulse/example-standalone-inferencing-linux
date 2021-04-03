@@ -1,32 +1,42 @@
-# Edge Impulse Example: stand-alone inferencing (C++)
+# Edge Impulse Linux SDK for C++
 
-This builds and runs an exported impulse locally on your machine. See the documentation at [Running your impulse locally](https://docs.edgeimpulse.com/docs/running-your-impulse-locally). There is also a [C version](https://github.com/edgeimpulse/example-standalone-inferencing-c) of this application.
+This library lets you run machine learning models and collect sensor data on Linux machines using C++. This SDK is part of [Edge Impulse](https://www.edgeimpulse.com) where we enable developers to create the next generation of intelligent device solutions with embedded machine learning. [Start here to learn more and train your first model](https://docs.edgeimpulse.com).
 
-## How to run (Rpi4)
+This repository comes with four examples:
 
-1. Copy everything over to a Raspberry Pi 4.
-1. Compile:
+* [custom](source/custom.cpp) - classify custom sensor data (`APP_CUSTOM=1`).
+* [audio](source/audio.cpp) - realtime audio classification (`APP_AUDIO=1`).
+* [camera](source/camera.cpp) - realtime image classification (`APP_CAMERA=1`).
+* [collect](source/collect.cpp) - collect custom sensor data (`APP_COLLECT=1`).
 
-    ```
-    $ TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
-    ```
+To build an application:
 
-1. Run:
-
-    ```
-    $ ./build/edge-impulse-standalone features.txt
-    ```
-
-## How to run (macOS x86)
-
-1. Compile:
+1. [Train an impulse](https://docs.edgeimpulse.com/docs).
+1. Export your trained impulse as a C++ Library from the Edge Impulse Studio (see the **Deployment** page) and copy them into this repository.
+1. Install the dependencies:
 
     ```
-    $ TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
+    $ sudo apt install libasound2
     ```
 
-1. Run:
+1. Build the application via:
 
     ```
-    $ ./build/edge-impulse-standalone features.txt
+    $ APP_CUSTOM=1 make -j
     ```
+
+    Replace `APP_CUSTOM=1` with the application you want to build.
+
+1. The application is in the build directory:
+
+    ```
+    $ ./build/custom
+    ```
+
+### Hardware acceleration
+
+For many targets there is hardware acceleration available. To enable this:
+
+* Raspberry Pi 4 and other Armv7 Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
+* AARCH64 Linux targets: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags.
+* Intel-based Macs: Build with `TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1` flags.
