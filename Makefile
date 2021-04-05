@@ -53,8 +53,13 @@ ifeq ($(UNAME_S),Linux) # on Linux set the library paths as well
 LDFLAGS += -L/usr/local/lib -Wl,-R/usr/local/lib
 endif
 LDFLAGS += -lopencv_ml -lopencv_objdetect -lopencv_stitching  -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_core
+else ifeq (${APP_COLLECT},1)
+NAME = collect
+CXXSOURCES += source/collect.cpp
+CSOURCES += $(wildcard ingestion-sdk-c/QCBOR/src/*.c) $(wildcard ingestion-sdk-c/mbedtls/library/*.c)
+CFLAGS += -Iingestion-sdk-c/mbedtls/include -Iingestion-sdk-c/mbedtls/crypto/include -Iingestion-sdk-c/QCBOR/inc -Iingestion-sdk-c/QCBOR/src -Iingestion-sdk-c/inc -Iingestion-sdk-c/inc/signing
 else
-$(error Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1 or APP_CAMERA=1)
+$(error Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1 or APP_COLLECT=1)
 endif
 
 COBJECTS := $(patsubst %.c,%.o,$(CSOURCES))

@@ -31,6 +31,13 @@ To build an application:
 
     Note that you cannot run any of the audio examples on macOS, as these depend on libasound2, which is not available there.
 
+1. Clone this repository and update the submodules (submodules are only required for the collect example):
+
+    ```
+    $ git clone https://github.com/edgeimpulse/example-standalone-inferencing-linux
+    $ cd example-standalone-inferencing-linux && git submodule update --init --recursive
+    ```
+
 1. Build the application via:
 
     ```

@@ -1,0 +1,3 @@
+[submodule "ingestion-sdk-c"]
+	path = ingestion-sdk-c
+	url = https://github.com/edgeimpulse/ingestion-sdk-c
