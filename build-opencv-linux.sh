@@ -21,5 +21,5 @@ fi
 mkdir -p build_opencv
 cd build_opencv
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON ../opencv
-make -j
-make install
+make -j3
+sudo make install

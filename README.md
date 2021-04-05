@@ -9,22 +9,24 @@ This repository comes with four examples:
 * [camera](source/camera.cpp) - realtime image classification (`APP_CAMERA=1`).
 * [collect](source/collect.cpp) - collect custom sensor data (`APP_COLLECT=1`).
 
+
 To build an application:
 
 1. [Train an impulse](https://docs.edgeimpulse.com/docs).
 1. Export your trained impulse as a C++ Library from the Edge Impulse Studio (see the **Deployment** page) and copy them into this repository.
-1. Install the dependencies:
+1. If you're using the audio or camera examples, you'll need to install libasound2 and OpenCV 4. You can do so via:
 
     **Linux**
 
     ```
-    $ sudo apt install libasound2 libopencv-dev
+    $ sudo apt install libasound2
+    $ sh build-opencv-linux.sh          # only needed if you want to run the camera example
     ```
 
     **macOS**
 
     ```
-    $ sh build-opencv-mac.sh
+    $ sh build-opencv-mac.sh            # only needed if you want to run the camera example
     ```
 
     Note that you cannot run any of the audio examples on macOS, as these depend on libasound2, which is not available there.
@@ -35,7 +37,7 @@ To build an application:
     $ APP_CUSTOM=1 make -j
     ```
 
-    Replace `APP_CUSTOM=1` with the application you want to build.
+    Replace `APP_CUSTOM=1` with the application you want to build. See 'Hardware acceleration' below for the hardware specific flags. You probably want these.
 
 1. The application is in the build directory:
 
