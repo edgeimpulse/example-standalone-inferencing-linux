@@ -10,3 +10,6 @@ features.txt
 images/
 convert/
 output.*.txt
+out/
+features*.txt
+opencv/
