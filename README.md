@@ -47,7 +47,7 @@ $ APP_COLLECT=1 make -j
 
 ## Classifying data
 
-This repository comes with four classification examples:
+This repository comes with three classification examples:
 
 * [custom](https://github.com/edgeimpulse/example-standalone-inferencing-linux/blob/master/source/custom.cpp) - classify custom sensor data (`APP_CUSTOM=1`).
 * [audio](https://github.com/edgeimpulse/example-standalone-inferencing-linux/blob/master/source/audio.cpp) - realtime audio classification (`APP_AUDIO=1`).
