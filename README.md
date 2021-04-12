@@ -83,24 +83,17 @@ For many targets there is hardware acceleration available. To enable this:
 
 ## How to run with TensorRT
 
-1. Symlink `edge-impulse-sdk` in from the `jetson-infer` branch.
-1. Put your saved model in `convert-savedmodel/saved_model`.
-1. Run `convert-savedmodel/convert.sh`.
-1. Export model as C++, put `model-parameters` folder into this directory.
-1. Update `model-parameters/model_metadata.h` by adding:
-
-    ```
-    #define EI_CLASSIFIER_TENSORRT                   6
-    ```
-
-    And updating:
-
-    ```
-    #define EI_CLASSIFIER_INFERENCING_ENGINE         EI_CLASSIFIER_TENSORRT
-    ```
-
+1. Check out the `jetson-infer` branch of `edgeimpulse` and make sure you build the exporter container.
+1. Enable 'Show Linux deploy options' on the **Dashboard** of your project.
+1. Go to **Deployment** and select the 'TensorRT library'. Put the folders into this project.
 1. Compile:
 
     ```
     $ rm -f source/*.o && APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
+    ```
+
+1. Run:
+
+    ```
+    $ ./build/custom some-features-file.txt
     ```
