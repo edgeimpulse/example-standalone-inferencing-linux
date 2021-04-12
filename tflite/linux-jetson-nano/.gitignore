@@ -1,0 +1,4 @@
+*.zip
+libcudart.so
+libnvinfer.so
+libnvonnxparser.so

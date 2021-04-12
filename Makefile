@@ -38,6 +38,15 @@ CSOURCES += edge-impulse-sdk/tensorflow/lite/c/common.c
 CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
 endif
 
+ifeq (${TARGET_JETSON_NANO},1)
+CFLAGS += -Dfloat16_t=float_t
+LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+
+ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
+$(error Missing shared libraries for TensorRT. Install them via `sh ./tflite/linux-jetson-nano/download.sh`)
+endif
+endif
+
 ifeq (${APP_CUSTOM},1)
 NAME = custom
 CXXSOURCES += source/custom.cpp
@@ -85,7 +94,7 @@ $(CCOBJECTS) : %.o : %.cc
 
 runner: $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS)
 	mkdir -p build
-	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) libei_debug.a -L. -lcudart -lnvinfer -lnvonnxparser -o build/$(NAME) $(LDFLAGS) -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) -o build/$(NAME) $(LDFLAGS)
 
 clean:
 	rm -f $(COBJECTS)

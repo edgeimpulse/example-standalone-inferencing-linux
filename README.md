@@ -78,3 +78,5 @@ For many targets there is hardware acceleration available. To enable this:
 * Raspberry Pi 4 and other Armv7 Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
 * AARCH64 Linux targets: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags.
 * Intel-based Macs: Build with `TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1` flags.
+* Jetson Nano: Build with `TARGET_JETSON_NANO=1` flags.
+    * Note: You'll need to download the shared libraries for the Jetson Nano via: `sh ./tflite/linux-jetson-nano/download.sh`
