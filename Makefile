@@ -92,7 +92,7 @@ $(CCOBJECTS) : %.o : %.cc
 
 runner: $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS)
 	mkdir -p build
-	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) -o build/$(NAME) $(LDFLAGS)
+	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) libei_debug.a -L. -lcudart -lnvinfer -lnvonnxparser -o build/$(NAME) $(LDFLAGS) -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
 
 clean:
 	rm -f $(COBJECTS)
