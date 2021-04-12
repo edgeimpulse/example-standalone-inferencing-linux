@@ -127,3 +127,8 @@ On the Jetson Nano you can also build with support for TensorRT, this fully leve
     ```
 
 Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. After this, the GPU seems to be warming up, so expect full performance about 2 minutes in. To do a fair performance comparison you probably want to use the custom application (no camera / microphone overhead) and run the classification in a loop.
+* Raspberry Pi 4 and other Armv7 Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
+* AARCH64 Linux targets: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags.
+* Intel-based Macs: Build with `TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1` flags.
+* Jetson Nano: Build with `TARGET_JETSON_NANO=1` flags.
+    * Note: You'll need to download the shared libraries for the Jetson Nano via: `sh ./tflite/linux-jetson-nano/download.sh`

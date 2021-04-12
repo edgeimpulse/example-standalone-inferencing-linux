@@ -38,6 +38,7 @@ CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcar
 endif
 
 ifeq (${TARGET_JETSON_NANO},1)
+CFLAGS += -Dfloat16_t=float_t
 LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
 
 ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
@@ -92,7 +93,7 @@ $(CCOBJECTS) : %.o : %.cc
 
 runner: $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS)
 	mkdir -p build
-	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) libei_debug.a -L. -lcudart -lnvinfer -lnvonnxparser -o build/$(NAME) $(LDFLAGS) -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) -o build/$(NAME) $(LDFLAGS)
 
 clean:
 	rm -f $(COBJECTS)
