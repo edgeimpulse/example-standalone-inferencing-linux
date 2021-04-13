@@ -97,3 +97,10 @@ For many targets there is hardware acceleration available. To enable this:
     ```
     $ ./build/custom some-features-file.txt
     ```
+
+### Build with Docker
+
+1. Copy `edge-impulse-sdk` - symlink won't work.
+1. `docker build -t test-jetson-nano .`
+1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make clean"`
+1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j"`

@@ -26,7 +26,6 @@ ifeq (${TARGET_LINUX_ARMV7},1)
 LDFLAGS += -L./tflite/linux-armv7 -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
 endif
 ifeq (${TARGET_LINUX_AARCH64},1)
-CFLAGS += -Dfloat16_t=float
 LDFLAGS += -L./tflite/linux-aarch64 -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
 endif
 ifeq (${TARGET_MAC_X86_64},1)
@@ -39,7 +38,6 @@ CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcar
 endif
 
 ifeq (${TARGET_JETSON_NANO},1)
-CFLAGS += -Dfloat16_t=float_t
 LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
 
 ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
