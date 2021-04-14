@@ -75,27 +75,27 @@ To build an application:
 
 For many targets there is hardware acceleration available. To enable this:
 
-* Raspberry Pi 4 and other Armv7 Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
-* AARCH64 Linux targets: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags.
+* Raspberry Pi 4 and other Armv7l Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
+* AARCH64 Linux targets like the Jetson Nano: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags (see below for information about the GPU on the Jetson Nano).
 * Intel-based Macs: Build with `TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1` flags.
-* Jetson Nano: Build with `TARGET_JETSON_NANO=1` flags.
-    * Note: You'll need to download the shared libraries for the Jetson Nano via: `sh ./tflite/linux-jetson-nano/download.sh`
 
-## How to run with TensorRT
+### TensorRT
 
-1. Check out the `jetson-infer` branch of `edgeimpulse` and make sure you build the exporter container.
-1. Enable 'Show Linux deploy options' on the **Dashboard** of your project.
-1. Go to **Deployment** and select the 'TensorRT library'. Put the folders into this project.
-1. Compile:
+On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models ([bug](https://github.com/NVIDIA/TensorRT/issues/592)) - which is why this is not enabled by default. To build with TensorRT:
 
-    ```
-    $ rm -f source/*.o && APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
-    ```
-
-1. Run:
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TensorRT library', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Download the shared libraries via:
 
     ```
-    $ ./build/custom some-features-file.txt
+    $ sh ./tflite/linux-jetson-nano/download.sh
+    ```
+
+1. Build your application with:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
     ```
 
 ### Build with Docker
@@ -106,3 +106,5 @@ For many targets there is hardware acceleration available. To enable this:
 1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j"`
 
 (if you mount edge-impulse-sdk as a volume with docker as well, then you can symlink from inside the container)
+
+Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. To see performance on the custom application you probably want to run the classification in a loop.
