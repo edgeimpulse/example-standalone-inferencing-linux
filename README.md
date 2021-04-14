@@ -83,7 +83,9 @@ For many targets there is hardware acceleration available. To enable this:
 
 On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models ([bug](https://github.com/NVIDIA/TensorRT/issues/592)) - which is why this is not enabled by default. To build with TensorRT:
 
-1. Export your trained impulse as a 'TensorRT library' from the Edge Impulse Studio (see the **Deployment** page) and copy the folders into this repository.
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TensorRT library', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
 1. Download the shared libraries via:
 
     ```
