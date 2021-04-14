@@ -75,32 +75,23 @@ To build an application:
 
 For many targets there is hardware acceleration available. To enable this:
 
-* Raspberry Pi 4 and other Armv7 Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
-* AARCH64 Linux targets: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags.
+* Raspberry Pi 4 and other Armv7l Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
+* AARCH64 Linux targets like the Jetson Nano: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags (see below for information about the GPU on the Jetson Nano).
 * Intel-based Macs: Build with `TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1` flags.
-* Jetson Nano: Build with `TARGET_JETSON_NANO=1` flags.
-    * Note: You'll need to download the shared libraries for the Jetson Nano via: `sh ./tflite/linux-jetson-nano/download.sh`
 
-## How to run with TensorRT
+### TensorRT
 
-1. Check out the `jetson-infer` branch of `edgeimpulse` and make sure you build the exporter container.
-1. Enable 'Show Linux deploy options' on the **Dashboard** of your project.
-1. Go to **Deployment** and select the 'TensorRT library'. Put the folders into this project.
-1. Compile:
+On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models ([bug](https://github.com/NVIDIA/TensorRT/issues/592)) - which is why this is not enabled by default. To build with TensorRT:
+
+1. Export your trained impulse as a 'TensorRT library' from the Edge Impulse Studio (see the **Deployment** page) and copy the folders into this repository.
+1. Download the shared libraries via:
 
     ```
-    $ rm -f source/*.o && APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
+    $ sh ./tflite/linux-jetson-nano/download.sh
     ```
 
-1. Run:
+1. Build your application with:
 
     ```
-    $ ./build/custom some-features-file.txt
+    $ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
     ```
-
-### Build with Docker
-
-1. Copy `edge-impulse-sdk` - symlink won't work.
-1. `docker build -t test-jetson-nano .`
-1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make clean"`
-1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j"`
