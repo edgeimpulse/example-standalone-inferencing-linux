@@ -97,3 +97,5 @@ On the Jetson Nano you can also build with support for TensorRT, this fully leve
     ```
     $ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
     ```
+
+Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. To see performance on the custom application you probably want to run the classification in a loop.
