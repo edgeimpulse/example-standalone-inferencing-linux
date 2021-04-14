@@ -156,3 +156,5 @@ Note that there is significant ramp up time required for TensorRT. The first tim
 1. `docker build -t test-jetson-nano .`
 1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make clean"`
 1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j"`
+
+(if you mount edge-impulse-sdk as a volume with docker as well, then you can symlink from inside the container)
