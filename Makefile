@@ -26,7 +26,6 @@ ifeq (${TARGET_LINUX_ARMV7},1)
 LDFLAGS += -L./tflite/linux-armv7 -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
 endif
 ifeq (${TARGET_LINUX_AARCH64},1)
-CFLAGS += -Dfloat16_t=float
 LDFLAGS += -L./tflite/linux-aarch64 -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
 endif
 ifeq (${TARGET_MAC_X86_64},1)
@@ -36,6 +35,14 @@ else
 CFLAGS += -DTF_LITE_DISABLE_X86_NEON=1
 CSOURCES += edge-impulse-sdk/tensorflow/lite/c/common.c
 CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
+endif
+
+ifeq (${TARGET_JETSON_NANO},1)
+LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+
+ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
+$(error Missing shared libraries for TensorRT. Install them via `sh ./tflite/linux-jetson-nano/download.sh`)
+endif
 endif
 
 ifeq (${APP_CUSTOM},1)

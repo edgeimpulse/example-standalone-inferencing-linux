@@ -13,3 +13,5 @@ output.*.txt
 out/
 features*.txt
 opencv/
+*.onnx
+convert-savedmodel/saved_model/

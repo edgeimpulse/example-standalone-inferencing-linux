@@ -75,6 +75,55 @@ To build an application:
 
 For many targets there is hardware acceleration available. To enable this:
 
-* Raspberry Pi 4 and other Armv7 Linux targets: Build with `TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1` flags.
-* AARCH64 Linux targets: Build with `TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1` flags.
-* Intel-based Macs: Build with `TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1` flags.
+**Raspberry Pi 4 (and other Armv7l Linux targets)**
+
+Build with the following flags:
+
+```
+$ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
+```
+
+**Jetson Nano (and other AARCH64 targets)**
+
+See the [TensoRT](#tensorrt) section below for information on enabling GPUs. To build with hardware extensions for running on the CPU:
+
+1. Install Clang:
+
+    ```
+    $ sudo apt install -y clang
+    ```
+
+1. Build with the following flags:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1 CC=clang CXX=clang++ make -j
+    ```
+
+**Intel-based Macs**
+
+Build with the following flags:
+
+```
+$ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
+```
+
+### TensorRT
+
+On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models - which is why this is not enabled by default. To build with TensorRT:
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TensorRT library', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Download the shared libraries via:
+
+    ```
+    $ sh ./tflite/linux-jetson-nano/download.sh
+    ```
+
+1. Build your application with:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
+    ```
+
+Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. After this, the GPU seems to be warming up, so expect full performance about 2 minutes in. To do a fair performance comparison you probably want to use the custom application (no camera / microphone overhead) and run the classification in a loop.
