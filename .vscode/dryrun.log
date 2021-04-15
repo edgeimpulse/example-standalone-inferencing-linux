@@ -1,0 +1,6 @@
+make all -f /Users/alex/work/example-standalone-inferencing-linux/Makefile --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/alex/work/example-standalone-inferencing-linux'
+make: Leaving directory `/Users/alex/work/example-standalone-inferencing-linux'
+ 
+/Users/alex/work/example-standalone-inferencing-linux/Makefile:70: *** Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1 or APP_COLLECT=1.  Stop.
+ 

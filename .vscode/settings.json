@@ -1,0 +1,25 @@
+{
+    "makefile.extensionOutputFolder": "./.vscode",
+    "peacock.color": "#531705",
+    "makefile.makefilePath": "Makefile",
+    "files.associations": {
+        "arm_math_f16.h": "c",
+        "arm_math.h": "c"
+    },
+    "workbench.colorCustomizations": {
+        "activityBar.activeBackground": "#832408",
+        "activityBar.activeBorder": "#000000",
+        "activityBar.background": "#832408",
+        "activityBar.foreground": "#e7e7e7",
+        "activityBar.inactiveForeground": "#e7e7e799",
+        "activityBarBadge.background": "#000000",
+        "activityBarBadge.foreground": "#e7e7e7",
+        "statusBar.background": "#531705",
+        "statusBar.foreground": "#e7e7e7",
+        "statusBarItem.hoverBackground": "#832408",
+        "titleBar.activeBackground": "#531705",
+        "titleBar.activeForeground": "#e7e7e7",
+        "titleBar.inactiveBackground": "#53170599",
+        "titleBar.inactiveForeground": "#e7e7e799"
+    }
+}

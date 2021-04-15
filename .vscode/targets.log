@@ -1,0 +1,250 @@
+make all -f /Users/alex/work/example-standalone-inferencing-linux/Makefile --print-data-base --no-builtin-variables --no-builtin-rules --question
+# GNU Make 3.81
+# Copyright (C) 2006  Free Software Foundation, Inc.
+# This is free software; see the source for copying conditions.
+# There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
+# PARTICULAR PURPOSE.
+
+# This program built for i386-apple-darwin11.3.0
+ 
+
+# Make data base, printed on Thu Apr 22 12:50:17 2021
+
+# Variables
+
+# automatic
+<D = $(patsubst %/,%,$(dir $<))
+# automatic
+?F = $(notdir $?)
+# environment
+EXAMPLE_STANDALONE_ECM3532_SENSOR_FOLDER = /Users/alex/work/example-standalone-inferencing-ecm3532-sensor/
+# environment
+VSCODE_LOG_NATIVE = false
+# automatic
+?D = $(patsubst %/,%,$(dir $?))
+# automatic
+@D = $(patsubst %/,%,$(dir $@))
+# automatic
+@F = $(notdir $@)
+# makefile
+CURDIR := /Users/alex/work/example-standalone-inferencing-linux
+# makefile
+SHELL = /bin/sh
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# environment
+_ = /usr/bin/make
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 35)
+CFLAGS = -Wall -g -Wno-strict-aliasing -I. -Isource -Imodel-parameters -Itflite-model -Ithird_party/ -Os -DNDEBUG -DEI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP -g -DTF_LITE_DISABLE_X86_NEON=1
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 1)
+MAKEFILE_LIST :=  /Users/alex/work/example-standalone-inferencing-linux/Makefile
+# environment
+VSCODE_NODE_CACHED_DATA_DIR = /Users/alex/Library/Application Support/Code/CachedData/3c4e3df9e89829dce27b7b5c24508306b151f30d
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 15)
+CXXFLAGS = -std=c++14
+# environment
+VSCODE_VERBOSE_LOGGING = true
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 37)
+CCSOURCES =  $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
+# environment
+VSCODE_IPC_HOOK_EXTHOST = /var/folders/p6/mdcbjz6n2v16kfdx6nkkgkj00000gn/T/vscode-ipc-d80adda6-c748-4316-9f47-493f1669bd72.sock
+# environment
+VSCODE_CWD = /
+# environment
+PATH = /Users/alex/opt/anaconda3/bin:/Users/alex/opt/anaconda3/condabin:/Users/alex/.npm-global/bin:/Library/Application Support/Mbed Studio/mbed-studio-tools/ac6/bin:/Users/alex/toolchains/aarch64-unknown-linux-gnu/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Users/alex/toolchains/arm/bin:/usr/local/MacGPG2/bin
+# environment
+LSCOLORS = GxFxCxDxBxegedabagaced
+# environment
+EXAMPLE_STANDALONE_SILABS_FOLDER = /Users/alex/work/example-standalone-inferencing-silabs-tb-sense-2/
+# environment
+SELENIUM_WIFI_SSID = cookie jar
+# environment
+VSCODE_LOG_STACK = false
+# environment
+ELECTRON_RUN_AS_NODE = 1
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 16)
+LDFLAGS = -lm -lstdc++
+# default
+.FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
+# environment
+SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.wNdy0prywm/Listeners
+# automatic
+%F = $(notdir $%)
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 3)
+UNAME_S := Darwin
+# environment
+CONDA_EXE = /Users/alex/opt/anaconda3/bin/conda
+# environment
+VSCODE_PIPE_LOGGING = true
+# environment
+PWD = /Users/alex/work/example-standalone-inferencing-linux
+# environment
+ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+# environment
+VSCODE_AMD_ENTRYPOINT = vs/workbench/services/extensions/node/extensionHostProcess
+# environment
+HOME = /Users/alex
+# default
+MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
+# environment
+LOGNAME = alex
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+# environment
+CONDA_PROMPT_MODIFIER = 
+# environment
+VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# automatic
+^D = $(patsubst %/,%,$(dir $^))
+# environment
+CONDA_DEFAULT_ENV = base
+# environment
+XPC_FLAGS = 0x0
+# default
+MAKE = $(MAKE_COMMAND)
+# default
+MAKECMDGOALS := all
+# environment
+SHLVL = 1
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 19)
+CXXSOURCES = $(wildcard tflite-model/*.cpp) $(wildcard edge-impulse-sdk/dsp/kissfft/*.cpp) $(wildcard edge-impulse-sdk/dsp/dct/*.cpp) $(wildcard ./edge-impulse-sdk/dsp/memory.cpp) $(wildcard edge-impulse-sdk/porting/posix/*.c*) $(wildcard edge-impulse-sdk/porting/mingw32/*.c*)
+# default
+MAKE_VERSION := 3.81
+# environment
+USER = alex
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 1)
+EI_SDK = edge-impulse-sdk
+# environment
+EXAMPLE_STANDALONE_HIMAX_FOLDER = /Users/alex/work/example-standalone-inferencing-himax
+# makefile
+.DEFAULT_GOAL := 
+# environment
+SELENIUM_WIFI_PASSWORD = sandworm
+# automatic
+%D = $(patsubst %/,%,$(dir $%))
+# environment
+CONDA_SHLVL = 1
+# default
+MAKE_COMMAND := /Library/Developer/CommandLineTools/usr/bin/make
+# makefile (from `/Users/alex/work/example-standalone-inferencing-linux/Makefile', line 36)
+CSOURCES = $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/CommonTables/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/BasicMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/ComplexMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/FastMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/SupportFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/MatrixFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c) edge-impulse-sdk/tensorflow/lite/c/common.c
+# default
+.VARIABLES := 
+# environment
+TMPDIR = /var/folders/p6/mdcbjz6n2v16kfdx6nkkgkj00000gn/T/
+# environment
+EXAMPLE_STANDALONE_ZEPHYR_FOLDER = /Users/alex/work/example-standalone-inferencing-zephyr/
+# automatic
+*F = $(notdir $*)
+# environment
+VSCODE_IPC_HOOK = /Users/alex/Library/Application Support/Code/1.55.2-main.sock
+# environment
+ARMLMD_LICENSE_FILE = /Applications/Mbed Studio.app/Contents/tools-config/ac6-license.dat
+# makefile
+MAKEFLAGS = Rrqp
+# environment
+ARDUINO_LIBRARY_FOLDER = /Users/alex/Documents/Arduino/libraries/
+# environment
+MFLAGS = -Rrqp
+# automatic
+*D = $(patsubst %/,%,$(dir $*))
+# environment
+XPC_SERVICE_NAME = com.microsoft.VSCode.11888
+# automatic
++D = $(patsubst %/,%,$(dir $+))
+# automatic
++F = $(notdir $+)
+# environment
+EXAMPLE_STANDALONE_ECM3532_VISION_FOLDER = /Users/alex/work/example-standalone-inferencing-ecm3532-vision/
+# environment
+__CF_USER_TEXT_ENCODING = 0x1F5:0x0:0x0
+# default
+MAKEFILES := 
+# automatic
+<F = $(notdir $<)
+# environment
+GCC_COLORS = error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01
+# environment
+CONDA_PYTHON_EXE = /Users/alex/opt/anaconda3/bin/python
+# automatic
+^F = $(notdir $^)
+# default
+SUFFIXES := 
+# environment
+EXAMPLE_STANDALONE_MBED_FOLDER = /Users/alex/work/example-standalone-inferencing-mbed/
+# environment
+_CE_M = 
+# default
+.INCLUDE_DIRS = /usr/local/include
+# environment
+MAKELEVEL := 0
+# environment
+CLICOLOR = 1
+# environment
+CONDA_PREFIX = /Users/alex/opt/anaconda3
+# environment
+VSCODE_PID = 68489
+# environment
+_CE_CONDA = 
+# variable set hash-table stats:
+# Load=87/1024=8%, Rehash=0, Collisions=2/137=1%
+
+# Pattern-specific Variable Values
+
+# No pattern-specific variable values.
+
+# Directories
+
+
+# No files, no impossibilities in 0 directories.
+
+# Implicit Rules
+
+# No implicit rules.
+
+# Files
+
+# Not a target:
+all:
+#  Command-line target.
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+.SUFFIXES:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+.DEFAULT:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
+/Users/alex/work/example-standalone-inferencing-linux/Makefile:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# files hash-table stats:
+# Load=4/1024=0%, Rehash=0, Collisions=0/5=0%
+# VPATH Search Paths
+
+# No `vpath' search paths.
+
+# No general (`VPATH' variable) search path.
+
+# # of strings in strcache: 1
+ 
+/Users/alex/work/example-standalone-inferencing-linux/Makefile:70: *** Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1 or APP_COLLECT=1.  Stop.
+ 
+# # of strcache buffers: 1
+# strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
+# strcache free: total = 4033 / max = 4033 / min = 4033 / avg = 4033
+
+# Finished Make data base on Thu Apr 22 12:50:17 2021
+
+ 
