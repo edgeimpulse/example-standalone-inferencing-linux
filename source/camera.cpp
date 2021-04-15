@@ -72,6 +72,10 @@ int main(int argc, char** argv) {
     if (argc < 2) {
         printf("Requires one parameter (ID of the webcam).\n");
         printf("You can find these via `v4l2-ctl --list-devices`.\n");
+        printf("E.g. for:\n");
+        printf("    C922 Pro Stream Webcam (usb-70090000.xusb-2.1):\n");
+	    printf("            /dev/video0\n");
+        printf("The ID of the webcam is 0\n");
         exit(1);
     }
 

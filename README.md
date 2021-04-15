@@ -81,7 +81,7 @@ For many targets there is hardware acceleration available. To enable this:
 
 ### TensorRT
 
-On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models ([bug](https://github.com/NVIDIA/TensorRT/issues/592)) - which is why this is not enabled by default. To build with TensorRT:
+On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models - which is why this is not enabled by default. To build with TensorRT:
 
 1. Go to the **Deployment** page in the Edge Impulse Studio.
 1. Select the 'TensorRT library', and the 'float32' optimizations.
@@ -97,14 +97,5 @@ On the Jetson Nano you can also build with support for TensorRT, this fully leve
     ```
     $ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
     ```
-
-### Build with Docker
-
-1. Copy `edge-impulse-sdk` - symlink won't work.
-1. `docker build -t test-jetson-nano .`
-1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make clean"`
-1. `docker run --rm -v $PWD:/linux-impulse-runner/linux_aarch64 test-jetson-nano /bin/bash -c "cd /linux-impulse-runner/linux_aarch64 && CC=aarch64-linux-gnu-gcc CXX=aarch64-linux-gnu-g++ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j"`
-
-(if you mount edge-impulse-sdk as a volume with docker as well, then you can symlink from inside the container)
 
 Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. To see performance on the custom application you probably want to run the classification in a loop.
