@@ -38,8 +38,8 @@ CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcar
 endif
 
 ifeq (${TARGET_JETSON_NANO},1)
-CFLAGS += -Itflite/linux-jetson-nano/
-LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+CFLAGS += -Itflite/linux-jetson-nano/ -Ilibtensorflow-jetson/include/
+LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser -Llibtensorflow-jetson/lib -ltensorflow -ltensorflow_framework  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
 
 ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
 $(error Missing shared libraries for TensorRT. Install them via `sh ./tflite/linux-jetson-nano/download.sh`)

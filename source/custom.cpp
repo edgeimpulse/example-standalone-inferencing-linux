@@ -78,6 +78,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+//DEBUG
+while(1) {
     ei_impulse_result_t result;
 
     signal_t signal;
@@ -118,4 +120,5 @@ int main(int argc, char **argv) {
 #endif
 
     printf("End output\n");
+} //DEBUG while 1
 }
