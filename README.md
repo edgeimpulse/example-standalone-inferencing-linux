@@ -99,6 +99,14 @@ See the [TensoRT](#tensorrt) section below for information on enabling GPUs. To 
     $ APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1 CC=clang CXX=clang++ make -j
     ```
 
+**x86 Linux targets**
+
+Build with the following flags:
+
+```
+$ APP_CUSTOM=1 TARGET_LINUX_X86=1 USE_FULL_TFLITE=1 make -j
+```
+
 **Intel-based Macs**
 
 Build with the following flags:
