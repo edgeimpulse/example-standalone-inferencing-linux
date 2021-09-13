@@ -68,8 +68,12 @@ NAME = collect
 CXXSOURCES += source/collect.cpp
 CSOURCES += $(wildcard ingestion-sdk-c/QCBOR/src/*.c) $(wildcard ingestion-sdk-c/mbedtls/library/*.c)
 CFLAGS += -Iingestion-sdk-c/mbedtls/include -Iingestion-sdk-c/mbedtls/crypto/include -Iingestion-sdk-c/QCBOR/inc -Iingestion-sdk-c/QCBOR/src -Iingestion-sdk-c/inc -Iingestion-sdk-c/inc/signing
+else ifeq (${APP_EIM},1)
+NAME = model.eim
+CXXSOURCES += source/eim.cpp
+CFLAGS += -Ithird_party/
 else
-$(error Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1 or APP_COLLECT=1)
+$(error Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1, APP_COLLECT=1 or APP_EIM=1)
 endif
 
 COBJECTS := $(patsubst %.c,%.o,$(CSOURCES))

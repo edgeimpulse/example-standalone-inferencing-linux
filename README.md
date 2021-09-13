@@ -135,3 +135,13 @@ On the Jetson Nano you can also build with support for TensorRT, this fully leve
     ```
 
 Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. After this, the GPU seems to be warming up, so expect full performance about 2 minutes in. To do a fair performance comparison you probably want to use the custom application (no camera / microphone overhead) and run the classification in a loop.
+
+## Building .eim files
+
+To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:
+
+```
+$ APP_CUSTOM=1 make -j
+```
+
+The model will be placed in `build/model.eim` and can be used directly by your application.
