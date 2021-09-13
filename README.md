@@ -141,7 +141,7 @@ Note that there is significant ramp up time required for TensorRT. The first tim
 To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:
 
 ```
-$ APP_CUSTOM=1 make -j
+$ APP_EIM=1 make -j
 ```
 
 The model will be placed in `build/model.eim` and can be used directly by your application.
