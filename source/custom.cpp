@@ -25,6 +25,7 @@
 #include <iostream>
 #include <sstream>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
+#include "bitmap_helper.h"
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
@@ -118,4 +119,19 @@ int main(int argc, char **argv) {
 #endif
 
     printf("End output\n");
+
+    for (size_t ix = 0; ix < EI_CLASSIFIER_OBJECT_DETECTION_COUNT; ix++) {
+        auto bb = result.bounding_boxes[ix];
+        if (bb.value == 0) {
+            continue;
+        }
+
+        for (size_t x = bb.x; x < bb.x + bb.width; x++) {
+            for (size_t y = bb.y; y < bb.y + bb.height; y++) {
+                raw_features[(y * EI_CLASSIFIER_INPUT_WIDTH) + x] = (float)0x00ff00;
+            }
+        }
+    }
+
+    create_bitmap_file("debug.bmp", raw_features.data(), EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
 }
