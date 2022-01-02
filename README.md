@@ -1,6 +1,10 @@
-# Edge Impulse Linux SDK for C++
+# Edge Impulse Linux SDK for C++ (Profiling branch)
 
 This library lets you run machine learning models and collect sensor data on Linux machines using C++. This SDK is part of [Edge Impulse](https://www.edgeimpulse.com) where we enable developers to create the next generation of intelligent device solutions with embedded machine learning. [Start here to learn more and train your first model](https://docs.edgeimpulse.com).
+
+This branch contains an additional application (build with `APP_PROFILING=1`) which profiles common models (both DSP and Neural Networks) to give an indication of on-device performance. Make sure to run this application with all optimizations enabled (so having the right kernels / runtime loaded). The models are loaded in as TFLite models, but if you run on a platform with a different inferencing engine you should convert these first and invoke that native inferencing engine. You can also take the code from `profiling.cpp` and run it on embedded devices.
+
+Here's an example of running this on an embedded device: [https://github.com/edgeimpulse/example-standalone-inferencing-mbed/tree/profiling](https://github.com/edgeimpulse/example-standalone-inferencing-mbed/tree/profiling).
 
 ## Installation guide
 

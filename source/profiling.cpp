@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <filesystem>
-namespace fs = std::filesystem;
+#include <map>
 
 #if EI_CLASSIFIER_USE_FULL_TFLITE
 #include <thread>
@@ -10,6 +9,8 @@ namespace fs = std::filesystem;
 #include "tensorflow/lite/kernels/register.h"
 #include "tensorflow/lite/model.h"
 #include "tensorflow/lite/optional_debug_tools.h"
+#include <filesystem>
+namespace fs = std::filesystem;
 
 #define ITERATION_COUNT         50
 #define ITERATION_COUNT_SSD     10
@@ -22,6 +23,9 @@ namespace fs = std::filesystem;
 #include "edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h"
 #include "edge-impulse-sdk/classifier/ei_aligned_malloc.h"
 #include "edge-impulse-sdk/tensorflow/lite/micro/kernels/micro_ops.h"
+
+static tflite::MicroErrorReporter micro_error_reporter;
+static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 
 #define ITERATION_COUNT         10
 #define ITERATION_COUNT_SSD     1
@@ -56,6 +60,7 @@ namespace fs = std::filesystem;
 
 // You can toggle these on / off in case devices don't have enough flash to hold all of them in one go
 // just concat the output afterwards
+#define EI_CLASSIFIER_TFLITE_ARENA_SIZE     (80 * 1024)     // Update this to grab as much RAM as possible on embedded systems
 #define GESTURES_F32           1
 #define GESTURES_I8            1
 #define MOBILENET_32_32_F32    1
@@ -67,6 +72,7 @@ namespace fs = std::filesystem;
 #define KEYWORDS_I8            1
 #define MFCC                   1
 
+#if EI_CLASSIFIER_USE_FULL_TFLITE
 int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tflite_len, int iterations, uint64_t *time_us) {
     std::unique_ptr<tflite::FlatBufferModel> model = nullptr;
     std::unique_ptr<tflite::Interpreter> interpreter = nullptr;
@@ -115,6 +121,58 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
 
     return 0;
 }
+#else // TensorFlow Lite Micro
+int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tflite_len, int iterations, uint64_t *time_us) {
+    uint8_t *tensor_arena = (uint8_t*)ei_aligned_calloc(16, EI_CLASSIFIER_TFLITE_ARENA_SIZE);
+    if (tensor_arena == NULL) {
+        ei_printf("Failed to allocate TFLite arena (%d bytes)\n", EI_CLASSIFIER_TFLITE_ARENA_SIZE);
+        return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
+    }
+
+    const tflite::Model* model = tflite::GetModel(trained_tflite);
+    if (model->version() != TFLITE_SCHEMA_VERSION) {
+        error_reporter->Report(
+            "Model provided is schema version %d not equal "
+            "to supported version %d.",
+            model->version(), TFLITE_SCHEMA_VERSION);
+        ei_aligned_free(tensor_arena);
+        return EI_IMPULSE_TFLITE_ERROR;
+    }
+
+    EI_TFLITE_RESOLVER;
+
+    tflite::MicroInterpreter *interpreter = new tflite::MicroInterpreter(
+        model, resolver, tensor_arena, EI_CLASSIFIER_TFLITE_ARENA_SIZE, error_reporter);
+
+    // Allocate memory from the tensor_arena for the model's tensors.
+    TfLiteStatus allocate_status = interpreter->AllocateTensors();
+    if (allocate_status != kTfLiteOk) {
+        error_reporter->Report("AllocateTensors() failed");
+        ei_aligned_free(tensor_arena);
+        return EI_IMPULSE_TFLITE_ERROR;
+    }
+
+    auto start_us = ei_read_timer_us();
+
+    for (int ix = 0; ix < iterations; ix++) {
+        TfLiteStatus invoke_status = interpreter->Invoke();
+        if (invoke_status != kTfLiteOk) {
+            error_reporter->Report("Invoke failed (%d)\n", invoke_status);
+            ei_aligned_free(tensor_arena);
+            return EI_IMPULSE_TFLITE_ERROR;
+        }
+    }
+
+    auto end_us = ei_read_timer_us();
+
+    *time_us = end_us - start_us;
+
+    delete interpreter;
+    ei_aligned_free(tensor_arena);
+
+    return 0;
+}
+#endif
 
 int main(int argc, char **argv) {
     std::map<std::string, int> res;
