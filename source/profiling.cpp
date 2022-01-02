@@ -39,6 +39,11 @@ namespace fs = std::filesystem;
 #endif
 
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
+#include "edge-impulse-sdk/dsp/numpy.hpp"
+#include "edge-impulse-sdk/dsp/numpy_types.h"
+#include "edge-impulse-sdk/classifier/ei_run_dsp.h"
+#include "model-parameters/model_metadata.h"
+#include "model-parameters/mfcc_input.h"
 #include "benchmark-nn/gestures-large-f32/tflite-trained.h"
 #include "benchmark-nn/gestures-large-i8/tflite-trained.h"
 #include "benchmark-nn/image-32-32-mobilenet-f32/tflite-trained.h"
@@ -60,6 +65,7 @@ namespace fs = std::filesystem;
 #define MOBILENET_320_320_F32  1
 #define KEYWORDS_F32           1
 #define KEYWORDS_I8            1
+#define MFCC                   1
 
 int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tflite_len, int iterations, uint64_t *time_us) {
     std::unique_ptr<tflite::FlatBufferModel> model = nullptr;
@@ -116,6 +122,7 @@ int main(int argc, char **argv) {
     int it_count = ITERATION_COUNT;
     int it_count_ssd = ITERATION_COUNT_SSD;
 
+    #if EI_CLASSIFIER_USE_FULL_TFLITE
     if (argc > 1) {
         for (int ix = 1; ix < argc; ix++) {
             FILE *f = fopen(argv[ix], "rb");
@@ -167,6 +174,7 @@ int main(int argc, char **argv) {
         it_count = 5;
         it_count_ssd = 3;
     }
+    #endif
 
     #if GESTURES_F32
     {
@@ -344,6 +352,62 @@ int main(int argc, char **argv) {
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
         ei_printf("\n");
         res[test_name] = (int)(time_us / iterations);
+    }
+    #endif
+
+    #if MFCC
+    {
+        const ei_dsp_config_mfcc_t config = {
+            2,
+            1,
+            13,
+            0.02f,
+            0.01f,
+            32,
+            256,
+            101,
+            300,
+            0,
+            0.98f,
+            1
+        };
+        const float frequency = 16000.0f;
+
+        int (*extract_fn)(ei::signal_t *signal, ei::matrix_t *output_matrix, void *config, const float frequency) = extract_mfcc_features;
+
+        ei::signal_t signal;
+        int ret;
+        ei::matrix_t output_matrix(1, 99*13);
+        ret = numpy::signal_from_buffer(mfcc_input, 16000, &signal);
+        if (ret != 0) {
+            ei_printf("ERR: Failed to run test (%d)\n", ret);
+            return 1;
+        }
+
+        int iterations = it_count;
+
+        auto start_us = ei_read_timer_us();
+
+        for (int ix = 0; ix < iterations; ix++) {
+            ret = extract_fn(&signal, &output_matrix, (void*)&config, frequency);
+            if (ret != 0) {
+                ei_printf("ERR: Failed to run test (%d)\n", ret);
+                return 1;
+            }
+        }
+
+        auto end_us = ei_read_timer_us();
+
+        auto time_us = end_us - start_us;
+
+        int64_t time_per_inference_us = (int64_t)(time_us / iterations);
+
+        // Cortex-M4F @ 80MHz takes 456000 us. and that's 59 mips
+        // so we can calculate back...
+        float factor = (float)time_per_inference_us / 456000.0f;
+        int dsp_mips = (int)(59.0f / factor);
+
+        ei_printf("DSP MIPS is %d\n\n", dsp_mips);
     }
     #endif
 
