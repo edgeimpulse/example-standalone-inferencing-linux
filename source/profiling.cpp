@@ -1,4 +1,7 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <filesystem>
+namespace fs = std::filesystem;
 
 #if EI_CLASSIFIER_USE_FULL_TFLITE
 #include <thread>
@@ -107,21 +110,76 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
     return 0;
 }
 
-int main() {
-    std::map<const char*, int> res;
+int main(int argc, char **argv) {
+    std::map<std::string, int> res;
+
+    int it_count = ITERATION_COUNT;
+    int it_count_ssd = ITERATION_COUNT_SSD;
+
+    if (argc > 1) {
+        for (int ix = 1; ix < argc; ix++) {
+            FILE *f = fopen(argv[ix], "rb");
+            if (f == NULL) {
+                ei_printf("ERR: Could not open file %s\n", argv[ix]);
+                return 1;
+            }
+
+            fseek(f, 0, SEEK_END);
+            auto lsize = ftell(f);
+            rewind(f);
+
+            int it_count_custom = it_count;
+
+            // more than 1MB?
+            if (lsize > 1 * 1024 * 1024) {
+                it_count_custom = 10;
+            }
+
+            uint8_t *data = (uint8_t*)malloc(lsize);
+            if (!data) {
+                ei_printf("ERR: Could not allocate buffer for file\n");
+                return 1;
+            }
+            fread(data, 100 * 1024 * 1024, 1, f);
+            fclose(f);
+
+            auto test_name = fs::path(argv[ix]).filename();
+
+            uint64_t time_us;
+            int iterations = it_count_custom;
+            int x = run_model_tflite_full((const unsigned char *)data, lsize, iterations, &time_us);
+            if (x != 0) {
+                ei_printf("ERR: Failed to run test (%d)\n", x);
+                return 1;
+            }
+
+            ei_printf("Test: %s\n", test_name.c_str());
+            ei_printf("Iterations: %d\n", iterations);
+            ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
+            ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
+            ei_printf("\n");
+            res[test_name] = (int)(time_us / iterations);
+
+            free(data);
+        }
+
+        // time matters here (as we most likely run this from a job), so just run few iterations now
+        it_count = 5;
+        it_count_ssd = 3;
+    }
 
     #if GESTURES_F32
     {
         uint64_t time_us;
-        const char *test_name = "gestures-large-f32";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "gestures-large-f32";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_gestures_large_f32, trained_tflite_gestures_large_f32_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -133,14 +191,14 @@ int main() {
     #if GESTURES_I8
     {
         uint64_t time_us;
-        const char *test_name = "gestures-large-i8";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "gestures-large-i8";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_gestures_large_i8, trained_tflite_gestures_large_i8_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -152,15 +210,15 @@ int main() {
     #if MOBILENET_32_32_F32
     {
         uint64_t time_us;
-        const char *test_name = "image-32-32-mobilenet-f32";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "image-32-32-mobilenet-f32";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_image_32_32_f32, trained_tflite_image_32_32_f32_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -172,15 +230,15 @@ int main() {
     #if MOBILENET_32_32_I8
     {
         uint64_t time_us;
-        const char *test_name = "image-32-32-mobilenet-i8";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "image-32-32-mobilenet-i8";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_image_32_32_i8, trained_tflite_image_32_32_i8_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -192,15 +250,15 @@ int main() {
     #if MOBILENET_96_96_F32
     {
         uint64_t time_us;
-        const char *test_name = "image-96-96-mobilenet-f32";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "image-96-96-mobilenet-f32";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_image_96_96_f32, trained_tflite_image_96_96_f32_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -212,15 +270,15 @@ int main() {
     #if MOBILENET_96_96_I8
     {
         uint64_t time_us;
-        const char *test_name = "image-96-96-mobilenet-i8";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "image-96-96-mobilenet-i8";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_image_96_96_i8, trained_tflite_image_96_96_i8_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -232,15 +290,15 @@ int main() {
     #if MOBILENET_320_320_F32
     {
         uint64_t time_us;
-        const char *test_name = "image-320-320-mobilenet-ssd-f32";
-        int iterations = ITERATION_COUNT_SSD;
+        std::string test_name = "image-320-320-mobilenet-ssd-f32";
+        int iterations = it_count_ssd;
         int x = run_model_tflite_full(trained_tflite_image_320_320_ssd_f32, trained_tflite_image_320_320_ssd_f32_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -252,15 +310,15 @@ int main() {
     #if KEYWORDS_F32
     {
         uint64_t time_us;
-        const char *test_name = "keywords-2d-f32";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "keywords-2d-f32";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_keywords_f32, trained_tflite_keywords_f32_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -272,15 +330,15 @@ int main() {
     #if KEYWORDS_I8
     {
         uint64_t time_us;
-        const char *test_name = "keywords-2d-i8";
-        int iterations = ITERATION_COUNT;
+        std::string test_name = "keywords-2d-i8";
+        int iterations = it_count;
         int x = run_model_tflite_full(trained_tflite_keywords_i8, trained_tflite_keywords_i8_len, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
         }
 
-        ei_printf("Test: %s\n", test_name);
+        ei_printf("Test: %s\n", test_name.c_str());
         ei_printf("Iterations: %d\n", iterations);
         ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
         ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
@@ -291,7 +349,7 @@ int main() {
 
     ei_printf("{\n");
     for (auto const& x : res) {
-        ei_printf("    %s: %f,\n", x.first, ((float)x.second / 1000.0f));
+        ei_printf("    %s: %f,\n", x.first.c_str(), ((float)x.second / 1000.0f));
     }
     ei_printf("}\n");
 

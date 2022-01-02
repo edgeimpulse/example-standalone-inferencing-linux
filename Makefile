@@ -12,7 +12,7 @@ CFLAGS += -Os
 CFLAGS += -DNDEBUG
 CFLAGS += -DEI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP
 CFLAGS += -g
-CXXFLAGS += -std=c++14
+CXXFLAGS += -std=c++17
 LDFLAGS += -lm -lstdc++
 
 CSOURCES = $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/CommonTables/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/BasicMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/ComplexMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/FastMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/SupportFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/MatrixFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c)
