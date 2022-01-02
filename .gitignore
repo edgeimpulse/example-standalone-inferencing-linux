@@ -4,7 +4,6 @@ deploy.zip
 *.o
 convert/node_modules/
 tflite-model/
-model-parameters/
 features.txt
 images/
 convert/
