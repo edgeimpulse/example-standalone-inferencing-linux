@@ -22,23 +22,21 @@ CCSOURCES =
 ifeq (${USE_FULL_TFLITE},1)
 CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -Itensorflow-lite/
+
 ifeq (${TARGET_LINUX_ARMV7},1)
 LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
-endif
+endif # TARGET_LINUX_ARMV7
 ifeq (${TARGET_LINUX_AARCH64},1)
 LDFLAGS += -L./tflite/linux-aarch64 -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
-endif
+endif # TARGET_LINUX_AARCH64
 ifeq (${TARGET_LINUX_X86},1)
 LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
-endif
+endif # TARGET_LINUX_X86
 ifeq (${TARGET_MAC_X86_64},1)
 LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lclog
-endif
-else
-CFLAGS += -DTF_LITE_DISABLE_X86_NEON=1
-CSOURCES += edge-impulse-sdk/tensorflow/lite/c/common.c
-CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
-endif
+endif # TARGET_MAC_X86_64
+
+endif # USE_FULL_TFLITE
 
 ifeq (${TARGET_JETSON_NANO},1)
 LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
@@ -46,7 +44,16 @@ LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lc
 ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
 $(error Missing shared libraries for TensorRT. Install them via `sh ./tflite/linux-jetson-nano/download.sh`)
 endif
-endif
+endif # TARGET_JETSON_NANO
+
+# Neither Jetson Nano (TensorRT) and neither full TFLite? Then fall back to TFLM kernels
+ifneq (${TARGET_JETSON_NANO},1)
+ifneq (${USE_FULL_TFLITE},1)
+CFLAGS += -DTF_LITE_DISABLE_X86_NEON=1
+CSOURCES += edge-impulse-sdk/tensorflow/lite/c/common.c
+CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
+endif # (${USE_FULL_TFLITE},1)
+endif # ifneq (${TARGET_JETSON_NANO},1)
 
 ifeq (${APP_CUSTOM},1)
 NAME = custom
