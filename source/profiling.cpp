@@ -348,8 +348,12 @@ int main(int argc, char **argv) {
     #endif
 
     ei_printf("{\n");
-    for (auto const& x : res) {
-        ei_printf("    %s: %f,\n", x.first.c_str(), ((float)x.second / 1000.0f));
+    for (auto x = res.begin(); x != res.end(); x++) {
+        ei_printf("    \"%s\": %f", x->first.c_str(), ((float)x->second / 1000.0f));
+        if (std::next(x) != res.end()) {
+            ei_printf(",");
+        }
+        ei_printf("\n");
     }
     ei_printf("}\n");
 
