@@ -79,8 +79,12 @@ else ifeq (${APP_EIM},1)
 NAME = model.eim
 CXXSOURCES += source/eim.cpp
 CFLAGS += -Ithird_party/
+else ifeq (${APP_CLASSIFY_EIM},1)
+NAME = classify-eim
+CXXSOURCES += source/classify_eim.cpp
+CFLAGS += -Ithird_party/
 else
-$(error Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1, APP_COLLECT=1 or APP_EIM=1)
+$(error Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1, APP_COLLECT=1, APP_CLASSIFY_EIM=1 or APP_EIM=1)
 endif
 
 COBJECTS := $(patsubst %.c,%.o,$(CSOURCES))
