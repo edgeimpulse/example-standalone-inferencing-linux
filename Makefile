@@ -9,9 +9,8 @@ CFLAGS += -Imodel-parameters
 CFLAGS += -Itflite-model
 CFLAGS += -Ithird_party/
 CFLAGS += -Os
-CFLAGS += -DNDEBUG
 CFLAGS += -DEI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP
-CFLAGS += -g
+CFLAGS += -g0
 CXXFLAGS += -std=c++14
 LDFLAGS += -lm -lstdc++
 
