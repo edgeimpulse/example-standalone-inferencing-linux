@@ -66,7 +66,6 @@ static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 #elif EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_TFLITE_FULL
 
 #include <thread>
-#include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/interpreter.h"
 #include "tensorflow/lite/kernels/register.h"
 #include "tensorflow/lite/model.h"

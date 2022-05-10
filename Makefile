@@ -35,6 +35,9 @@ endif # TARGET_LINUX_X86
 ifeq (${TARGET_MAC_X86_64},1)
 LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lclog
 endif # TARGET_MAC_X86_64
+ifeq (${TARGET_MAC_M1},1)
+LDFLAGS += -L./tflite/mac-m1 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy_allocator -lruy_apply_multiplier -lruy_block_map -lruy_blocking_counter -lruy_context -lruy_context_get_ctx -lruy_cpuinfo -lruy_ctx -lruy_denormal -lruy_frontend -lruy_have_built_path_for_avx -lruy_have_built_path_for_avx2_fma -lruy_have_built_path_for_avx512 -lruy_kernel_arm -lruy_kernel_avx -lruy_kernel_avx2_fma -lruy_kernel_avx512 -lruy_pack_arm -lruy_pack_avx -lruy_pack_avx2_fma -lruy_pack_avx512 -lruy_prepacked_cache -lruy_prepare_packed_matrices -lruy_system_aligned_alloc -lruy_thread_pool -lruy_trmul -lruy_tune -lruy_wait -lXNNPACK -lpthreadpool -lclog
+endif # TARGET_MAC_M1
 
 endif # USE_FULL_TFLITE
 

@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     if (raw_features.size() != EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE) {
         printf("The size of your 'features' array is not correct. Expected %d items, but had %lu\n",
             EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, raw_features.size());
-        // return 1;
+        return 1;
     }
 
     ei_impulse_result_t result;

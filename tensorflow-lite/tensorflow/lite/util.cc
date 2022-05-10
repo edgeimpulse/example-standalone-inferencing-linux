@@ -27,6 +27,7 @@ limitations under the License.
 
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/core/macros.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
 namespace tflite {
@@ -96,7 +97,10 @@ TfLiteStatus GetSizeOfType(TfLiteContext* context, const TfLiteType type,
       *bytes = sizeof(float);
       break;
     case kTfLiteInt32:
-      *bytes = sizeof(int);
+      *bytes = sizeof(int32_t);
+      break;
+    case kTfLiteUInt32:
+      *bytes = sizeof(uint32_t);
       break;
     case kTfLiteUInt8:
       *bytes = sizeof(uint8_t);
@@ -169,4 +173,23 @@ std::string GetOpNameByRegistration(const TfLiteRegistration& registration) {
   return result;
 }
 
+bool IsValidationSubgraph(const char* name) {
+  // NOLINTNEXTLINE: can't use absl::StartsWith as absl is not allowed.
+  return name && std::string(name).find(kValidationSubgraphNamePrefix) == 0;
+}
+
+TfLiteStatus MultiplyAndCheckOverflow(size_t a, size_t b, size_t* product) {
+  // Multiplying a * b where a and b are size_t cannot result in overflow in a
+  // size_t accumulator if both numbers have no non-zero bits in their upper
+  // half.
+  constexpr size_t size_t_bits = 8 * sizeof(size_t);
+  constexpr size_t overflow_upper_half_bit_position = size_t_bits / 2;
+  *product = a * b;
+  // If neither integers have non-zero bits past 32 bits can't overflow.
+  // Otherwise check using slow devision.
+  if (TFLITE_EXPECT_FALSE((a | b) >> overflow_upper_half_bit_position != 0)) {
+    if (a != 0 && *product / a != b) return kTfLiteError;
+  }
+  return kTfLiteOk;
+}
 }  // namespace tflite

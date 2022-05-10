@@ -68,7 +68,6 @@ constexpr int kFloatValuesPerNeonVector = 4;
 constexpr int kInt16ValuesPerNeonVector = 8;
 constexpr int kInt8ValuesPerNeonVector = 16;
 constexpr int kNeonVectorAlignment = 4;
-
 template <int PerNeonSize>
 inline int RoundDownVectors(int size) {
   return size & ~(PerNeonSize - 1);
@@ -143,6 +142,31 @@ inline int32_t AccumulateNeonLane(const int32x4_t lane) {
 #endif
 }
 
+// Single-rounding MultiplyByQuantizedMultiplier
+#if TFLITE_SINGLE_ROUNDING
+inline int32x4x2_t MultiplyByQuantizedMultiplier2Rows(
+    int32x4x2_t input_val, int32_t quantized_multiplier, int shift) {
+  TFLITE_DCHECK(quantized_multiplier >= 0);
+  const int right_shift = std::min(-1, shift);
+  const int left_shift = shift - right_shift;
+
+  const int32x4_t multiplier_dup = vdupq_n_s32(quantized_multiplier);
+  const int32x4_t left_shift_dup = vdupq_n_s32(left_shift);
+  const int32x4_t right_shift_dup = vdupq_n_s32(right_shift);
+
+  int32x4x2_t result;
+  result.val[0] = vrshlq_s32(
+      vqdmulhq_s32(vshlq_s32(input_val.val[0], left_shift_dup), multiplier_dup),
+      right_shift_dup);
+
+  result.val[1] = vrshlq_s32(
+      vqdmulhq_s32(vshlq_s32(input_val.val[1], left_shift_dup), multiplier_dup),
+      right_shift_dup);
+
+  return result;
+}
+// Double-rounding MultiplyByQuantizedMultiplier
+#else
 inline int32x4x2_t MultiplyByQuantizedMultiplier2Rows(
     int32x4x2_t input_val, int32 quantized_multiplier, int shift) {
   using gemmlowp::RoundingDivideByPOT;
@@ -193,6 +217,7 @@ inline int32x4x2_t MultiplyByQuantizedMultiplier2Rows(
 #endif
   return result;
 }
+#endif  // TFLITE_SINGLE_ROUNDING
 
 }  // namespace
 
@@ -438,9 +463,10 @@ static void DotprodMatrixBatchFourVectorMultiplyAccumulate(
       ShuffleVectors(vectors, n_batch, m_cols, &shuffled_vectors_free);
 
   for (int row = 0; row < m_rows; row += 2) {
-    const float* channel_scales_ptr = per_channel_scale + row;
-    int32_t* row_sums_ptr = row_sums ? row_sums + row : nullptr;
     for (int batch = 0; batch < n_batch; batch += 4) {
+      const float* channel_scales_ptr = per_channel_scale + row;
+      int32_t* row_sums_ptr = row_sums ? row_sums + row : nullptr;
+
       float* result_ptr = result + (batch * m_rows) + row;
       const int8* mat_ptr0 = matrix + (row * m_cols);
       const int8* mat_ptr1 = matrix + ((row + 1) * m_cols);
@@ -540,11 +566,11 @@ static void DotprodMatrixBatchFourVectorMultiplyAccumulate(
           "st2 {v9.s, v10.s}[3], [%[result_ptr]], %[wide_rows]\n"
           : [mat_ptr0] "+r"(mat_ptr0), [mat_ptr1] "+r"(mat_ptr1),
             [vec_ptr] "+r"(vec_ptr), [result_ptr] "+r"(result_ptr),
-            [row_sums_ptr] "+r"(row_sums_ptr)
+            [row_sums_ptr] "+r"(row_sums_ptr),
+            [channel_scales_ptr] "+r"(channel_scales_ptr)
           : [mat_ptr0_end] "r"(mat_ptr0_end),
             [scaling_factors_ptr] "r"(scaling_factors_ptr),
             [wide_rows] "r"(wide_rows),
-            [channel_scales_ptr] "r"(channel_scales_ptr),
             [batch_offsets_ptr] "r"(batch_offsets_ptr),
             [is_channel_scale_nullptr] "r"(is_channel_scale_nullptr),
             [is_row_sums_nullptr] "r"(is_row_sums_nullptr)
@@ -1373,11 +1399,8 @@ void NeonMatrixBatchVectorMultiplyAccumulate(
     int n_batch, float* __restrict__ result, const float* per_channel_scale,
     const int32_t* input_offset, int32_t* scratch, int32_t* row_sums,
     bool* compute_row_sums, CpuBackendContext* context) {
-#ifdef TFLITE_WITH_RUY_GEMV
-  const bool use_cpu_backend_gemm = true;
-#else
-  const bool use_cpu_backend_gemm = UseCpuBackendGemm(m_rows, m_cols, n_batch);
-#endif
+  const bool use_cpu_backend_gemm = (context && context->use_caching()) ||
+                                    UseCpuBackendGemm(m_rows, m_cols, n_batch);
   if (input_offset == nullptr) {
     if (use_cpu_backend_gemm && context) {
       NeonMatrixBatchVectorMultiplyAccumulate(matrix, m_rows, m_cols, vectors,
@@ -1521,9 +1544,10 @@ void NeonApplyLayerNorm(const int16_t* input, const int16_t* layer_norm_weights,
       sum_sq += val * val;
     }
 
+    // Divide by `n_input` first to avoid overflow but only works for POT
+    // `n_input`.
     int32_t mean =
         static_cast<int32_t>(static_cast<int64_t>(sum) * 1024 / n_input);
-    // TODO(jianlijianli): Avoids overflow but only works for POT n_input.
     int64_t variance =
         sum_sq * temp - static_cast<int64_t>(mean) * static_cast<int64_t>(mean);
     int32_t variance2 = static_cast<int32>(variance / 1048576);
@@ -2228,9 +2252,8 @@ void NeonVectorScalarMultiply(const int8_t* vector, const int v_size,
   }
 }
 
-// TODO(renjieliu): Avoid duplicating the logic.
-// Also consider changing the rounding stragey from "ties to away" to
-// "ties to even" since vcvtnq_s32_f32 is generally more available.
+// TODO(b/185850916): Consider changing the rounding stragey from "ties to away"
+// to "ties to even" since vcvtnq_s32_f32 is generally more available.
 inline int32x4_t RoundToNearest(const float32x4_t input) {
 #if __ARM_ARCH >= 8
   return vcvtaq_s32_f32(input);
