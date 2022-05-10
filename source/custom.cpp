@@ -24,7 +24,9 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
+#include <map>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
+#include "pose-estimation/pose_estimation_dsp_block.h"
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
@@ -75,7 +77,7 @@ int main(int argc, char **argv) {
     if (raw_features.size() != EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE) {
         printf("The size of your 'features' array is not correct. Expected %d items, but had %lu\n",
             EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, raw_features.size());
-        return 1;
+        // return 1;
     }
 
     ei_impulse_result_t result;
@@ -87,6 +89,8 @@ int main(int argc, char **argv) {
     printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
         result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
+    std::map<std::string, int> cnt;
+
     printf("Begin output\n");
 
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
@@ -94,6 +98,15 @@ int main(int argc, char **argv) {
         auto bb = result.bounding_boxes[ix];
         if (bb.value == 0) {
             continue;
+        }
+
+        std::string label(bb.label);
+        auto cnt_entry = cnt.find(label);
+        if (cnt_entry == cnt.end()) {
+            cnt[label] = 1;
+        }
+        else {
+            cnt_entry->second++;
         }
 
         printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
@@ -116,6 +129,11 @@ int main(int argc, char **argv) {
 #endif
     printf("]\n");
 #endif
+
+    for (auto it : cnt) {
+        printf("%s: %d\n", it.first.c_str(), it.second);
+    }
+
 
     printf("End output\n");
 }
