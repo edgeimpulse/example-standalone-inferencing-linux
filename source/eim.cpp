@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
+#include "pose-estimation/pose_estimation_dsp_block.h"
 
 using namespace std;
 
@@ -66,7 +67,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         }
 
         // 1 image DSP block?
-        int16_t channel_count = 0;
+        int16_t channel_count = 3;
         if (ei_dsp_blocks_size == 1 && ei_dsp_blocks[0].extract_fn == &extract_image_features) {
             ei_dsp_config_image_t *config = (ei_dsp_config_image_t *)(ei_dsp_blocks[0].config);
             channel_count = strcmp(config->channels, "Grayscale") == 0 ? 1 : 3;
