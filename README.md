@@ -115,6 +115,16 @@ Build with the following flags:
 $ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
 ```
 
+**M1-based Macs**
+
+Build with the following flags:
+
+```
+$ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 arch -x86_64 make -j
+```
+
+Note that this does build an x86 binary, but it runs very fast through Rosetta.
+
 ### TensorRT
 
 On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models - which is why this is not enabled by default. To build with TensorRT:
