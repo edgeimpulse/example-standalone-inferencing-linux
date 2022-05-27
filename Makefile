@@ -38,10 +38,6 @@ endif # TARGET_MAC_X86_64
 
 endif # USE_FULL_TFLITE
 
-ifeq (${TARGET_RZV2L},1)
-CFLAGS += -Llinux
-endif # TARGET_RZV2L
-
 ifeq (${TARGET_JETSON_NANO},1)
 LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
 

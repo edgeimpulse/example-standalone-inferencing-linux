@@ -78,47 +78,44 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-	while(1) {
-		ei_impulse_result_t result;
+    ei_impulse_result_t result;
 
-		signal_t signal;
-		numpy::signal_from_buffer(&raw_features[0], raw_features.size(), &signal);
+    signal_t signal;
+    numpy::signal_from_buffer(&raw_features[0], raw_features.size(), &signal);
 
+    EI_IMPULSE_ERROR res = run_classifier(&signal, &result, false);
+    printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
+        result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
-		EI_IMPULSE_ERROR res = run_classifier(&signal, &result, false);
-		printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
-			result.timing.dsp, result.timing.classification, result.timing.anomaly);
-
-		printf("Begin output\n");
+    printf("Begin output\n");
 
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
-		for (size_t ix = 0; ix < EI_CLASSIFIER_OBJECT_DETECTION_COUNT; ix++) {
-			auto bb = result.bounding_boxes[ix];
-			if (bb.value == 0) {
-				continue;
-			}
+    for (size_t ix = 0; ix < EI_CLASSIFIER_OBJECT_DETECTION_COUNT; ix++) {
+        auto bb = result.bounding_boxes[ix];
+        if (bb.value == 0) {
+            continue;
+        }
 
-			printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
-		}
+        printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+    }
 #else
-		// print the predictions
-		printf("[");
-		for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-			printf("%.5f", result.classification[ix].value);
+    // print the predictions
+    printf("[");
+    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+        printf("%.5f", result.classification[ix].value);
 #if EI_CLASSIFIER_HAS_ANOMALY == 1
-			printf(", ");
+        printf(", ");
 #else
-			if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
-				printf(", ");
-			}
+        if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
+            printf(", ");
+        }
 #endif
-		}
+    }
 #if EI_CLASSIFIER_HAS_ANOMALY == 1
-		printf("%.3f", result.anomaly);
+    printf("%.3f", result.anomaly);
 #endif
-		printf("]\n");
+    printf("]\n");
 #endif
 
-		printf("End output\n");
-	}
+    printf("End output\n");
 }
