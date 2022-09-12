@@ -71,6 +71,11 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             ei_dsp_config_image_t *config = (ei_dsp_config_image_t *)(ei_dsp_blocks[0].config);
             channel_count = strcmp(config->channels, "Grayscale") == 0 ? 1 : 3;
         }
+        // other DSP block but image input? always assume 3 channels, we can't take shortcut here
+        // anyway
+        else if (EI_CLASSIFIER_INPUT_WIDTH != 0) {
+            channel_count = 3;
+        }
 
 #if EI_CLASSIFIER_OBJECT_DETECTION
         const char *model_type = "object_detection";
