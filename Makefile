@@ -39,11 +39,7 @@ endif # TARGET_MAC_X86_64
 endif # USE_FULL_TFLITE
 
 ifeq (${TARGET_JETSON_NANO},1)
-LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -Ltflite/linux-jetson-nano -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
-
-ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
-$(error Missing shared libraries for TensorRT. Install them via `sh ./tflite/linux-jetson-nano/download.sh`)
-endif
+LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/ -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
 endif # TARGET_JETSON_NANO
 
 # Neither Jetson Nano (TensorRT) and neither full TFLite? Then fall back to TFLM kernels
