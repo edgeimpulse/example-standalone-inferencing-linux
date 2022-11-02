@@ -180,7 +180,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
         nlohmann::json bb_res = nlohmann::json::array();
-        for (size_t ix = 0; ix < EI_CLASSIFIER_OBJECT_DETECTION_COUNT; ix++) {
+        for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
             auto bb = result.bounding_boxes[ix];
             if (bb.value == 0) {
                 continue;
