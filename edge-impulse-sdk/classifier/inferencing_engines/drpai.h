@@ -146,26 +146,28 @@ uint8_t drpai_init_mem(uint32_t input_frame_size) {
     return -1;
   }
 
+  // input_frame_size === data_in_size
   uint8_t *addr =
       (uint8_t *)mmap(NULL, input_frame_size,
                       PROT_READ | PROT_WRITE, MAP_SHARED, udmabuf_fd0, 0);
+
+  drpai_input_buf = addr;
 
   /* Write once to allocate physical memory to u-dma-buf virtual space.
    * Note: Do not use memset() for this.
    *       Because it does not work as expected. */
   for (i = 0; i < input_frame_size; i++) {
-    addr[i] = 0;
+    drpai_input_buf[i] = 0;
   }
 
-  drpai_input_buf = addr;
-  drpai_output_buf = (float *)ei_malloc(10000 * sizeof(float));
 
   get_udmabuf_memory_start_addr();
   if (0 == udmabuf_address) {
     return EI_IMPULSE_DRPAI_INIT_FAILED;
   }
 
-  // ei_printf("INFO: udmabuf_addr: %p\n", udmabuf_address);
+  EI_LOGI("Initialized DRPAI input buf (size: 0x%x, addr: %p)\r\n", input_frame_size, drpai_input_buf);
+  EI_LOGI("udmabuf_addr: %p\n", udmabuf_address);
 
   return 0;
 }
@@ -349,6 +351,17 @@ EI_IMPULSE_ERROR drpai_init_classifier() {
   proc[DRPAI_INDEX_OUTPUT].address = drpai_address.data_out_addr;
   proc[DRPAI_INDEX_OUTPUT].size = drpai_address.data_out_size;
 
+  EI_LOGD("proc[DRPAI_INDEX_INPUT] addr: %p, size: %p\r\n", proc[DRPAI_INDEX_INPUT].address, proc[DRPAI_INDEX_INPUT].size);
+  EI_LOGD("proc[DRPAI_INDEX_DRP_CFG] addr: %p, size: %p\r\n", proc[DRPAI_INDEX_DRP_CFG].address, proc[DRPAI_INDEX_DRP_CFG].size);
+  EI_LOGD("proc[DRPAI_INDEX_DRP_PARAM] addr: %p, size: %p\r\n", proc[DRPAI_INDEX_DRP_PARAM].address, proc[DRPAI_INDEX_DRP_PARAM].size);
+  EI_LOGD("proc[DRPAI_INDEX_AIMAC_DESC] addr: %p, size: %p\r\n", proc[DRPAI_INDEX_AIMAC_DESC].address, proc[DRPAI_INDEX_AIMAC_DESC].size);
+  EI_LOGD("proc[DRPAI_INDEX_DRP_DESC] addr: %p, size: %p\r\n", proc[DRPAI_INDEX_DRP_DESC].address, proc[DRPAI_INDEX_DRP_DESC].size);
+  EI_LOGD("proc[DRPAI_INDEX_WEIGHT] addr: %p, size: %p\r\n", proc[DRPAI_INDEX_WEIGHT].address, proc[DRPAI_INDEX_WEIGHT].size);
+  EI_LOGD("proc[DRPAI_INDEX_OUTPUT] addr: %p, size: %p\r\n", proc[DRPAI_INDEX_OUTPUT].address, proc[DRPAI_INDEX_OUTPUT].size);
+
+  drpai_output_buf = (float *)ei_malloc(drpai_address.data_out_size);
+  EI_LOGI("Initialized DRPAI output buf (size: 0x%x, addr: %p)\r\n", drpai_address.data_out_size, drpai_output_buf);
+
   return EI_IMPULSE_OK;
 }
 
@@ -374,6 +387,7 @@ EI_IMPULSE_ERROR drpai_run_classifier_image_quantized() {
   drpai_data.size = drpai_address.data_out_size;
 
   // Start DRP-AI driver
+  EI_LOGD("Start DRPAI inference\r\n");
   int ioret = ioctl(drpai_fd, DRPAI_START, &proc[0]);
   if (0 != ioret) {
     EI_LOGE("Failed to Start DRPAI Inference: %d\n", errno);
@@ -388,6 +402,7 @@ EI_IMPULSE_ERROR drpai_run_classifier_image_quantized() {
   tv.tv_nsec = 0;
 
   // Wait until DRP-AI ends
+  EI_LOGD("Waiting on DRPAI inference results\r\n");
   ret_drpai = pselect(drpai_fd + 1, &rfds, NULL, NULL, &tv, NULL);
   if (ret_drpai == 0) {
       EI_LOGE("DRPAI Inference pselect() Timeout: %d\n", errno);
@@ -398,12 +413,14 @@ EI_IMPULSE_ERROR drpai_run_classifier_image_quantized() {
   }
 
   // Checks for DRPAI inference status errors
+  EI_LOGD("Getting DRPAI Status\r\n");
   inf_status = ioctl(drpai_fd, DRPAI_GET_STATUS, &drpai_status);
   if (inf_status != 0) {
       EI_LOGE("DRPAI Internal Error: %d\n", errno);
     return EI_IMPULSE_DRPAI_RUNTIME_FAILED;
   }
 
+  EI_LOGD("Getting inference results\r\n");
   if (ioctl(drpai_fd, DRPAI_ASSIGN, &drpai_data) != 0) {
       EI_LOGE("Failed to Assign DRPAI data: %d\n", errno);
     return EI_IMPULSE_DRPAI_RUNTIME_FAILED;
@@ -419,6 +436,7 @@ EI_IMPULSE_ERROR drpai_run_classifier_image_quantized() {
 // close the driver (reset file handles)
 EI_IMPULSE_ERROR drpai_close(uint32_t input_frame_size) {
   munmap(drpai_input_buf, input_frame_size);
+  free(drpai_output_buf);
   if (drpai_fd > 0) {
     if (0 != close(drpai_fd)) {
         EI_LOGE("Failed to Close DRP-AI Driver: errno=%d\n", errno);
@@ -460,17 +478,19 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(
     }
 
     EI_LOGD("Starting DSP...\n");
+    int ret;
 
+    EI_LOGD("fmatrix size == Bpp * signal.total_length ( %p == %p * %p = %p )\r\n", proc[DRPAI_INDEX_INPUT].size, 3, signal->total_length, 3 * signal->total_length);
     // Creates a features matrix mapped to the DRP-AI UDMA input region
     ei::matrix_i8_t features_matrix(1, proc[DRPAI_INDEX_INPUT].size, (int8_t *)drpai_input_buf);
 
     // Grabs the raw image buffer from the signal, DRP-AI will automatically
     // extract features
-    int ret = extract_drpai_features_quantized(
+    ret = extract_drpai_features_quantized(
         signal,
         &features_matrix,
         ei_dsp_blocks[0].config,
-        EI_CLASSIFIER_FREQUENCY);
+        impulse->frequency);
     if (ret != EIDSP_OK) {
         ei_printf("ERR: Failed to run DSP process (%d)\n", ret);
         return EI_IMPULSE_DSP_ERROR;
@@ -482,14 +502,13 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(
 
     result->timing.dsp_us = ei_read_timer_us() - dsp_start_us;
     result->timing.dsp = (int)(result->timing.dsp_us / 1000);
-
 #if EI_LOG_LEVEL >= EI_LOG_LEVEL_DEBUG
-        ei_printf("DSP was assigned address: 0x%lx\n", drpai_input_buf);
-        ei_printf("Features (%d ms.): ", result->timing.dsp);
-        for (size_t ix = 0; ix < EI_CLASSIFIER_NN_INPUT_FRAME_SIZE; ix++) {
-            ei_printf("0x%hhx, ", drpai_input_buf[ix]);
-        }
-        ei_printf("\n");
+      ei_printf("DSP was assigned address: 0x%lx\n", drpai_input_buf);
+      ei_printf("Features (%d ms.): ", result->timing.dsp);
+      for (size_t ix = 0; ix < EI_CLASSIFIER_NN_INPUT_FRAME_SIZE; ix++) {
+          ei_printf("0x%hhx, ", drpai_input_buf[ix]);
+      }
+      ei_printf("\n");
 #endif
 
     ctx_start_us = ei_read_timer_us();
@@ -535,39 +554,29 @@ EI_IMPULSE_ERROR run_nn_inference_image_quantized(
                     impulse->object_detection_last_layer);
                 return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
             }
-            case EI_CLASSIFIER_LAST_LAYER_YOLOV5:
             case EI_CLASSIFIER_LAST_LAYER_YOLOV5_V5_DRPAI: {
                 #if EI_LOG_LEVEL >= EI_LOG_LEVEL_DEBUG
                     ei_printf("DEBUG: raw drpai output");
                     ei_printf("\n[");
-                    for (uint32_t i = 0; i < 12 * 12 * 2; i++) {
+                    for (uint32_t i = 0; i < 10; i++) {
                         ei_printf_float(drpai_output_buf[i]);
                         ei_printf(" ");
                     }
                     ei_printf("]\n");
                 #endif
 
-                    int version = impulse->object_detection_last_layer == EI_CLASSIFIER_LAST_LAYER_YOLOV5_V5_DRPAI ?
-                        5 : 6;
-
                 #if EI_CLASSIFIER_TFLITE_OUTPUT_QUANTIZED == 1
                     ei_printf("ERR: YOLOv5 does not support quantized inference\n");
                     return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
                 #else
-                    fill_result_struct_f32_yolov5(
-                        impulse,
-                        result,
-                        version,
-                        drpai_output_buf,
-                        impulse->tflite_output_features_count);
+                    //fill_result_struct_f32_yolov5(
+                    //    impulse,
+                    //    result,
+                    //    drpai_output_buf,
+                    //    impulse->tflite_output_features_count);
                 #endif
 
                 break;
-            }
-            case EI_CLASSIFIER_LAST_LAYER_YOLOX: {
-                ei_printf("ERR: YOLOX models are not implemented for DRP-AI (%d)\n",
-                    impulse->object_detection_last_layer);
-                return EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE;
             }
             default: {
                 ei_printf("ERR: Unsupported object detection last layer (%d)\n",

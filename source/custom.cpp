@@ -25,130 +25,97 @@
 #include <iostream>
 #include <sstream>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
-#include "edge-impulse-sdk/classifier/inferencing_engines/tflite_full.h"
-#include "bitmap_helper.h"
-#include "yolov5-part2/drpai_out.h"
-#include "yolov5-part2/model-part2.h"
+
+std::string trim(const std::string& str) {
+    size_t first = str.find_first_not_of(' ');
+    if (std::string::npos == first)
+    {
+        return str;
+    }
+    size_t last = str.find_last_not_of(' ');
+    return str.substr(first, (last - first + 1));
+}
+
+std::string read_file(const char *filename) {
+    FILE *f = (FILE*)fopen(filename, "r");
+    if (!f) {
+        printf("Cannot open file %s\n", filename);
+        return "";
+    }
+    fseek(f, 0, SEEK_END);
+    size_t size = ftell(f);
+    std::string ss;
+    ss.resize(size);
+    rewind(f);
+    fread(&ss[0], 1, size, f);
+    fclose(f);
+    return ss;
+}
 
 int main(int argc, char **argv) {
-
-    static std::unique_ptr<tflite::FlatBufferModel> model = nullptr;
-    static std::unique_ptr<tflite::Interpreter> interpreter = nullptr;
-
-    if (!model) {
-        model = tflite::FlatBufferModel::BuildFromBuffer((const char*)yolov5_part2, yolov5_part2_len);
-        if (!model) {
-            ei_printf("Failed to build TFLite model from buffer\n");
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
-
-        tflite::ops::builtin::BuiltinOpResolver resolver;
-        tflite::InterpreterBuilder builder(*model, resolver);
-        builder(&interpreter);
-
-        if (!interpreter) {
-            ei_printf("Failed to construct interpreter\n");
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
-
-        if (interpreter->AllocateTensors() != kTfLiteOk) {
-            ei_printf("AllocateTensors failed\n");
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
-
-        int hw_thread_count = (int)std::thread::hardware_concurrency();
-        hw_thread_count -= 1; // leave one thread free for the other application
-        if (hw_thread_count < 1) {
-            hw_thread_count = 1;
-        }
-
-        if (interpreter->SetNumThreads(hw_thread_count) != kTfLiteOk) {
-            ei_printf("SetNumThreads failed\n");
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
+    if (argc != 2) {
+        printf("Requires one parameter (a comma-separated list of raw features, or a file pointing at raw features)\n");
+        return 1;
     }
 
-    const size_t drpai_features = drpai_buff_size;
-
-    const size_t els_per_grid = drpai_features / ((NUM_GRID_1 * NUM_GRID_1) + (NUM_GRID_2 * NUM_GRID_2) + (NUM_GRID_3 * NUM_GRID_3));
-
-    const size_t grid_1_offset = 0;
-    const size_t grid_1_size = (NUM_GRID_1 * NUM_GRID_1) * els_per_grid;
-
-    const size_t grid_2_offset = grid_1_offset + grid_1_size;
-    const size_t grid_2_size = (NUM_GRID_2 * NUM_GRID_2) * els_per_grid;
-
-    const size_t grid_3_offset = grid_2_offset + grid_2_size;
-    const size_t grid_3_size = (NUM_GRID_3 * NUM_GRID_3) * els_per_grid;
-
-    // Now we don't know the exact tensor order for some reason
-    // so let's do that dynamically
-    for (size_t ix = 0; ix < 3; ix++) {
-        TfLiteTensor * tensor = interpreter->input_tensor(ix);
-        size_t tensor_size = 1;
-        for (size_t ix = 0; ix < tensor->dims->size; ix++) {
-            tensor_size *= tensor->dims->data[ix];
-        }
-
-        printf("input tensor %d, tensor_size=%d\n", (int)ix, (int)tensor_size);
-
-        float *input = interpreter->typed_input_tensor<float>(ix);
-
-        if (tensor_size == grid_1_size) {
-            memcpy(input, drpai_buff + grid_1_offset, grid_1_size * sizeof(float));
-        }
-        else if (tensor_size == grid_2_size) {
-            memcpy(input, drpai_buff + grid_2_offset, grid_2_size * sizeof(float));
-        }
-        else if (tensor_size == grid_3_size) {
-            memcpy(input, drpai_buff + grid_3_offset, grid_3_size * sizeof(float));
-        }
-        else {
-            printf("Cannot determine which grid to use for input tensor %d with %d tensor size\n",
-                (int)ix, (int)tensor_size);
-            return 1;
-        }
+    std::string input = argv[1];
+    if (!strchr(argv[1], ' ') && strchr(argv[1], '.')) { // looks like a filename
+        input = read_file(argv[1]);
     }
 
-    uint64_t ctx_start_us = ei_read_timer_us();
+    std::istringstream ss(input);
+    std::string token;
 
-    interpreter->Invoke();
+    std::vector<float> raw_features;
 
-    uint64_t ctx_end_us = ei_read_timer_us();
-
-    printf("Invoke took %d ms.\n", (int)((ctx_end_us - ctx_start_us) / 1000));
-
-    float* out_data = interpreter->typed_output_tensor<float>(0);
-
-    const size_t out_size = 1 * 9072 * 7;
-
-    printf("First 20 bytes: ");
-    for (size_t ix = 0; ix < 20; ix++) {
-        printf("%f ", out_data[ix]);
+    while (std::getline(ss, token, ',')) {
+        raw_features.push_back(std::stof(trim(token)));
     }
-    printf("\n");
 
-    // printf("Last 5 bytes: ");
-    // for (size_t ix = out_size - 5; ix < out_size; ix++) {
-    //     printf("%f ", out_data[ix]);
-    // }
-    // printf("\n");
-
-    ei_impulse_t impulse = { 0 };
-    impulse.input_width = IMAGE_WIDTH;
-    impulse.input_height = IMAGE_HEIGHT;
-    impulse.label_count = NUM_CLASS;
-    impulse.object_detection_threshold = 0.3f;
+    if (raw_features.size() != EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE) {
+        printf("The size of your 'features' array is not correct. Expected %d items, but had %lu\n",
+            EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, raw_features.size());
+        return 1;
+    }
 
     ei_impulse_result_t result;
 
-    fill_result_struct_f32_yolov5((const ei_impulse_t *)&impulse, &result, 5, out_data, out_size);
+    signal_t signal;
+    numpy::signal_from_buffer(&raw_features[0], raw_features.size(), &signal);
 
-    printf("\n\nC++ results:\nbounding_boxes_count = %d\n", (int)result.bounding_boxes_count);
+    EI_IMPULSE_ERROR res = run_classifier(&signal, &result, true);
+    printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
+        result.timing.dsp, result.timing.classification, result.timing.anomaly);
+
+    printf("Begin output\n");
+
+#if EI_CLASSIFIER_OBJECT_DETECTION == 1
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
-        ei_impulse_result_bounding_box_t *r = &result.bounding_boxes[ix];
-        printf("    %s %.5f [ %d, %d, %d, %d ]\n",
-            r->label, r->value, r->x, r->y, r->width, r->height);
+        auto bb = result.bounding_boxes[ix];
+        if (bb.value == 0) {
+            continue;
+        }
+
+        printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
     }
-    printf("\n");
+#else
+    // print the predictions
+    printf("[");
+    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+        printf("%.5f", result.classification[ix].value);
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
+        printf(", ");
+#else
+        if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
+            printf(", ");
+        }
+#endif
+    }
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
+    printf("%.3f", result.anomaly);
+#endif
+    printf("]\n");
+#endif
+
+    printf("End output\n");
 }
