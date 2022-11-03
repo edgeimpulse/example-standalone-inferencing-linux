@@ -3,9 +3,6 @@ build/
 deploy.zip
 *.o
 convert/node_modules/
-tflite-model/
-model-parameters/
-edge-impulse-sdk
 features.txt
 images/
 convert/
