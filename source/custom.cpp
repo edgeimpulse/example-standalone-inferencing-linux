@@ -25,6 +25,7 @@
 #include <iostream>
 #include <sstream>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
+#include "bitmap_helper.h"
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
@@ -87,35 +88,11 @@ int main(int argc, char **argv) {
     printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
         result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
-    printf("Begin output\n");
-
-#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+    printf("\n\nC++ results:\nbounding_boxes_count = %d\n", (int)result.bounding_boxes_count);
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
-        auto bb = result.bounding_boxes[ix];
-        if (bb.value == 0) {
-            continue;
-        }
-
-        printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+        ei_impulse_result_bounding_box_t *r = &result.bounding_boxes[ix];
+        printf("    %s %.5f [ %d, %d, %d, %d ]\n",
+            r->label, r->value, r->x, r->y, r->width, r->height);
     }
-#else
-    // print the predictions
-    printf("[");
-    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-        printf("%.5f", result.classification[ix].value);
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-        printf(", ");
-#else
-        if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
-            printf(", ");
-        }
-#endif
-    }
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-    printf("%.3f", result.anomaly);
-#endif
-    printf("]\n");
-#endif
-
-    printf("End output\n");
+    printf("\n");
 }
