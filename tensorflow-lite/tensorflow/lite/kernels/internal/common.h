@@ -75,6 +75,7 @@ float ActivationFunction(float x) {
 inline void BiasAndClamp(float clamp_min, float clamp_max, int bias_size,
                          const float* bias_data, int array_size,
                          float* array_data) {
+  if (bias_size == 0) return;
   // Note: see b/132215220: in May 2019 we thought it would be OK to replace
   // this with the Eigen one-liner:
   //   return (array.colwise() + bias).cwiseMin(clamp_max).cwiseMin(clamp_max).
@@ -575,7 +576,8 @@ log_x_for_x_greater_than_or_equal_to_1_impl(
   //                   InputIntegerBits - z_b_headroom - 0.25);
   const FixedPointAccum z_a_pow_2_adj = SaturatingAddNonGemmlowp(
       FixedPointAccum::FromRaw(SaturatingRoundingMultiplyByPOTParam(
-          InputIntegerBits - z_a_headroom_plus_1, 31 - kAccumIntegerBits)),
+          static_cast<int32_t>(InputIntegerBits - z_a_headroom_plus_1),
+          31 - kAccumIntegerBits)),
       shifted_quarter);
 
   // z_b is treated like z_a, but premultiplying by sqrt(0.5).
@@ -585,7 +587,8 @@ log_x_for_x_greater_than_or_equal_to_1_impl(
       SaturatingRoundingMultiplyByPOTParam(z_a.raw(), z_b_headroom);
   const FixedPointAccum z_b_pow_2_adj = SaturatingSub(
       FixedPointAccum::FromRaw(SaturatingRoundingMultiplyByPOTParam(
-          InputIntegerBits - z_b_headroom, 31 - kAccumIntegerBits)),
+          static_cast<int32_t>(InputIntegerBits - z_b_headroom),
+          31 - kAccumIntegerBits)),
       shifted_quarter);
 
   const FixedPoint0 r = FixedPoint0::FromRaw(std::min(r_a_raw, r_b_raw));

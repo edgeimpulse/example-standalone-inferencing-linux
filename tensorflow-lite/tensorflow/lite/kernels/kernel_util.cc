@@ -21,12 +21,18 @@ limitations under the License.
 #include <complex>
 #include <limits>
 #include <memory>
+#ifndef TF_LITE_STATIC_MEMORY
 #include <string>
+#endif  // TF_LITE_STATIC_MEMORY
 
 #include "tensorflow/lite/c/builtin_op_data.h"
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/kernels/internal/cppmath.h"
 #include "tensorflow/lite/kernels/internal/quantization_util.h"
+
+#if defined(__APPLE__)
+#include "TargetConditionals.h"
+#endif
 
 namespace tflite {
 
@@ -113,6 +119,7 @@ TfLiteStatus GetInputSafe(const TfLiteContext* context, const TfLiteNode* node,
 TfLiteTensor* GetVariableInput(TfLiteContext* context, const TfLiteNode* node,
                                int index) {
   TfLiteTensor* tensor = GetMutableInput(context, node, index);
+  if (tensor == nullptr) return nullptr;
   return tensor->is_variable ? tensor : nullptr;
 }
 
@@ -191,7 +198,7 @@ TfLiteStatus PopulateConvolutionQuantizationParams(
     const TfLiteTensor* filter, const TfLiteTensor* bias, TfLiteTensor* output,
     const TfLiteFusedActivation& activation, int32_t* multiplier, int* shift,
     int32_t* output_activation_min, int32_t* output_activation_max,
-    int32_t* per_channel_multiplier, int* per_channel_shift) {
+    int32_t* per_channel_multiplier, int32_t* per_channel_shift) {
   const auto* affine_quantization =
       reinterpret_cast<TfLiteAffineQuantization*>(filter->quantization.params);
   return PopulateConvolutionQuantizationParams(
@@ -206,7 +213,8 @@ TfLiteStatus PopulateConvolutionQuantizationParams(
     const TfLiteTensor* filter, const TfLiteTensor* bias, TfLiteTensor* output,
     const TfLiteFusedActivation& activation, int32_t* multiplier, int* shift,
     int32_t* output_activation_min, int32_t* output_activation_max,
-    int32_t* per_channel_multiplier, int* per_channel_shift, int num_channels) {
+    int32_t* per_channel_multiplier, int32_t* per_channel_shift,
+    int num_channels) {
   TF_LITE_ENSURE_EQ(context, input->quantization.type,
                     kTfLiteAffineQuantization);
   TF_LITE_ENSURE_EQ(context, filter->quantization.type,
@@ -327,30 +335,49 @@ TfLiteStatus GetQuantizedConvolutionMultipler(TfLiteContext* context,
 }
 
 namespace {
-void CalculateActivationRangeQuantizedImpl(TfLiteFusedActivation activation,
-                                           int32_t qmin, int32_t qmax,
-                                           TfLiteTensor* output,
-                                           int32_t* act_min, int32_t* act_max) {
+
+inline TfLiteStatus Quantize(TfLiteContext* context, float scale,
+                             int32_t zero_point, float f, int32_t& q) {
+  const float tmp = TfLiteRound(f / scale);
+  const bool no_integer_overflow_from_quantization =
+      (tmp >= static_cast<float>(std::numeric_limits<int32_t>::min()) &&
+       tmp <= static_cast<float>(std::numeric_limits<int32_t>::max()));
+  TF_LITE_ENSURE(context, no_integer_overflow_from_quantization);
+  q = zero_point + static_cast<int32_t>(tmp);
+  return kTfLiteOk;
+}
+
+TfLiteStatus CalculateActivationRangeQuantizedImpl(
+    TfLiteContext* context, TfLiteFusedActivation activation, int32_t qmin,
+    int32_t qmax, TfLiteTensor* output, int32_t* act_min, int32_t* act_max) {
   const auto scale = output->params.scale;
   const auto zero_point = output->params.zero_point;
 
-  auto quantize = [scale, zero_point](float f) {
-    return zero_point + static_cast<int32_t>(TfLiteRound(f / scale));
-  };
-
+  int32_t tmp_q;
   if (activation == kTfLiteActRelu) {
-    *act_min = std::max(qmin, quantize(0.0));
+    TF_LITE_ENSURE_OK(context,
+                      Quantize(context, scale, zero_point, 0.0, tmp_q));
+    *act_min = std::max(qmin, tmp_q);
     *act_max = qmax;
   } else if (activation == kTfLiteActRelu6) {
-    *act_min = std::max(qmin, quantize(0.0));
-    *act_max = std::min(qmax, quantize(6.0));
+    TF_LITE_ENSURE_OK(context,
+                      Quantize(context, scale, zero_point, 0.0, tmp_q));
+    *act_min = std::max(qmin, tmp_q);
+    TF_LITE_ENSURE_OK(context,
+                      Quantize(context, scale, zero_point, 6.0, tmp_q));
+    *act_max = std::min(qmax, tmp_q);
   } else if (activation == kTfLiteActReluN1To1) {
-    *act_min = std::max(qmin, quantize(-1.0));
-    *act_max = std::min(qmax, quantize(1.0));
+    TF_LITE_ENSURE_OK(context,
+                      Quantize(context, scale, zero_point, -1.0, tmp_q));
+    *act_min = std::max(qmin, tmp_q);
+    TF_LITE_ENSURE_OK(context,
+                      Quantize(context, scale, zero_point, 1.0, tmp_q));
+    *act_max = std::min(qmax, tmp_q);
   } else {
     *act_min = qmin;
     *act_max = qmax;
   }
+  return kTfLiteOk;
 }
 }  // namespace
 
@@ -374,9 +401,8 @@ TfLiteStatus CalculateActivationRangeQuantized(TfLiteContext* context,
     TF_LITE_ENSURE(context, false);
   }
 
-  CalculateActivationRangeQuantizedImpl(activation, qmin, qmax, output, act_min,
-                                        act_max);
-  return kTfLiteOk;
+  return CalculateActivationRangeQuantizedImpl(context, activation, qmin, qmax,
+                                               output, act_min, act_max);
 }
 
 bool HaveSameShapes(const TfLiteTensor* input1, const TfLiteTensor* input2) {
@@ -411,6 +437,10 @@ TfLiteStatus CalculateShapeForBroadcast(TfLiteContext* context,
   int out_dims = std::max(dims1, dims2);
   if (NumElements(input1) == 0) {
     *output_shape = TfLiteIntArrayCopy(input1->dims);
+    return kTfLiteOk;
+  }
+  if (NumElements(input2) == 0) {
+    *output_shape = TfLiteIntArrayCopy(input2->dims);
     return kTfLiteOk;
   }
   std::unique_ptr<TfLiteIntArray, void (*)(TfLiteIntArray*)> shape(
@@ -486,6 +516,9 @@ int TfLiteTypeGetSize(TfLiteType type) {
     case kTfLiteInt32:
       TF_LITE_ASSERT_EQ(sizeof(int32_t), 4);
       return 4;
+    case kTfLiteUInt32:
+      TF_LITE_ASSERT_EQ(sizeof(uint32_t), 4);
+      return 4;
     case kTfLiteInt64:
       TF_LITE_ASSERT_EQ(sizeof(int64_t), 8);
       return 8;
@@ -504,6 +537,17 @@ int TfLiteTypeGetSize(TfLiteType type) {
     default:
       return 0;
   }
+}
+
+bool IsMobilePlatform() {
+#if defined(ANDROID) || defined(__ANDROID__)
+  return true;
+#elif defined(__APPLE__)
+#if TARGET_IPHONE_SIMULATOR || TARGET_OS_IPHONE
+  return true;
+#endif
+#endif
+  return false;
 }
 
 }  // namespace tflite
