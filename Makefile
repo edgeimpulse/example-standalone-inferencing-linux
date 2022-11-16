@@ -26,6 +26,17 @@ USE_FULL_TFLITE=1
 TARGET_LINUX_AARCH64=1
 endif
 
+ifeq (${TARGET_TDA4VM},1)
+USE_FULL_TFLITE=1
+TARGET_LINUX_AARCH64=1
+CFLAGS += -I${TIDL_TOOLS_PATH}
+LDFLAGS +=  -L./tflite/linux-ti-tda4vm -lti_rpmsg_char -lvx_tidl_rt
+
+ifeq (,$(wildcard ./tflite/linux-ti-tda4vm/libvx_tidl_rt.so))
+$(error Missing shared libraries for TIDL. Install them via `sh ./tflite/linux-ti-tda4vm/download.sh`)
+endif
+endif
+
 ifeq (${USE_FULL_TFLITE},1)
 CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -Itensorflow-lite/
