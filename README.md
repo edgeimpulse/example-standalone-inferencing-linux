@@ -159,7 +159,7 @@ On the Renesas RZ/V2L you can also build with support for DRP-AI, this fully lev
 1. Go to the **Deployment** page in the Edge Impulse Studio.
 1. Select the 'DRP-AI library', and the 'float32' optimizations.
 
-> Note: currently only RGB MobileNetV2 Image Classification, FOMO and YOLOv5 (v5) models supported.
+> Note: currently only RGB MobileNetV2 Image Classification, FOMO and [YOLOv5 (v5)](https://github.com/edgeimpulse/yolov5/tree/v5) models supported.
 
 1. Build the library and copy the folders into this repository.
 
