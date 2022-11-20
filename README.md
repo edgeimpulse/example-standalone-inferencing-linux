@@ -75,7 +75,9 @@ To build an application:
 
 For many targets there is hardware acceleration available. To enable this:
 
-**Raspberry Pi 4 (and other Armv7l Linux targets)**
+**Armv7l Linux targets**
+
+> e.g. Raspberry Pi 4
 
 Build with the following flags:
 
@@ -83,9 +85,11 @@ Build with the following flags:
 $ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
 ```
 
-**Jetson Nano (and other AARCH64 targets)**
+**AARCH64 Linux targets**
 
-See the [TensoRT](#tensorrt) section below for information on enabling GPUs. To build with hardware extensions for running on the CPU:
+> e.g. NVIDIA Jetson Nano
+
+> See the [AARCH64 with AI Acceleration](#aarch64-with-ai-acceleration) section below for information on enabling hardware (AI) acceleration for your AARCH64 Linux target.
 
 1. Install Clang:
 
@@ -125,7 +129,9 @@ $ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 arch -x86_64 make -j
 
 Note that this does build an x86 binary, but it runs very fast through Rosetta.
 
-### TensorRT
+### AARCH64 with AI Acceleration
+
+#### NVIDIA Jetson Nano - TensorRT
 
 On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models - which is why this is not enabled by default. To build with TensorRT:
 
