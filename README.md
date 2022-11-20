@@ -152,6 +152,23 @@ On the Jetson Nano you can also build with support for TensorRT, this fully leve
 
 Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. After this, the GPU seems to be warming up, so expect full performance about 2 minutes in. To do a fair performance comparison you probably want to use the custom application (no camera / microphone overhead) and run the classification in a loop.
 
+#### Renesas RZV2L - DRP-AI
+
+On the Renesas RZ/V2L you can also build with support for DRP-AI, this fully leverages the DRP and AI-MAC on the Renesas RZ/V2L.
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'DRP-AI library', and the 'float32' optimizations.
+
+> Note: currently only RGB FOMO, MobileNet SSD, YOLOv5 (v5) models supported.
+
+1. Build the library and copy the folders into this repository.
+
+1. Build your application with:
+
+    ```
+    $ TARGET_RENESAS_RZV2L=1 make -j
+    ```
+
 ## Building .eim files
 
 To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:
