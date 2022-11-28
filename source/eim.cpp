@@ -22,7 +22,15 @@ typedef struct {
     int version;
 } runner_state_t;
 
-static char rapidjson_buffer[10 * 1024 * 1024];
+#if defined __GNUC__
+#define ALIGN(X) __attribute__((aligned(X)))
+#elif defined _MSC_VER
+#define ALIGN(X) __declspec(align(X))
+#elif defined __TASKING__
+#define ALIGN(X) __align(X)
+#endif
+
+static char rapidjson_buffer[10 * 1024 * 1024] ALIGN(8);
 rapidjson::MemoryPoolAllocator<> rapidjson_allocator(rapidjson_buffer, sizeof(rapidjson_buffer));
 
 static runner_state_t state = { 0 };
