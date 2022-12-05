@@ -210,7 +210,7 @@ On the Texas Instruments TDA4VM you can also build with support for TIDL, this f
 1. Build your application with:
 
     ```
-    $ TARGET_TDA4VM=1 make -j
+    $ APP_CUSTOM=1 TARGET_TDA4VM=1 make -j
     ```
 
 ## Building .eim files
