@@ -75,7 +75,9 @@ To build an application:
 
 For many targets there is hardware acceleration available. To enable this:
 
-**Raspberry Pi 4 (and other Armv7l Linux targets)**
+**Armv7l Linux targets**
+
+> e.g. Raspberry Pi 4
 
 Build with the following flags:
 
@@ -83,9 +85,11 @@ Build with the following flags:
 $ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
 ```
 
-**Jetson Nano (and other AARCH64 targets)**
+**AARCH64 Linux targets**
 
-See the [TensoRT](#tensorrt) section below for information on enabling GPUs. To build with hardware extensions for running on the CPU:
+> e.g. NVIDIA Jetson Nano, Renesas RZ/V2L
+
+> See the [AARCH64 with AI Acceleration](#aarch64-with-ai-acceleration) section below for information on enabling hardware (AI) acceleration for your AARCH64 Linux target.
 
 1. Install Clang:
 
@@ -125,7 +129,9 @@ $ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 arch -x86_64 make -j
 
 Note that this does build an x86 binary, but it runs very fast through Rosetta.
 
-### TensorRT
+### AARCH64 with AI Acceleration
+
+#### NVIDIA Jetson Nano - TensorRT
 
 On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models - which is why this is not enabled by default. To build with TensorRT:
 
@@ -145,6 +151,23 @@ On the Jetson Nano you can also build with support for TensorRT, this fully leve
     ```
 
 Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. After this, the GPU seems to be warming up, so expect full performance about 2 minutes in. To do a fair performance comparison you probably want to use the custom application (no camera / microphone overhead) and run the classification in a loop.
+
+#### Renesas RZV2L - DRP-AI
+
+On the Renesas RZ/V2L you can also build with support for DRP-AI, this fully leverages the DRP and AI-MAC on the Renesas RZ/V2L.
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'DRP-AI library', and the 'float32' optimizations.
+
+> Note: currently only RGB MobileNetV2 Image Classification, FOMO and [YOLOv5 (v5)](https://github.com/edgeimpulse/yolov5/tree/v5) models supported.
+
+1. Build the library and copy the folders into this repository.
+
+1. Build your application with:
+
+    ```
+    $ TARGET_RENESAS_RZV2L=1 make -j
+    ```
 
 ## Building .eim files
 
