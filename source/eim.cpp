@@ -16,6 +16,13 @@
 using namespace std;
 
 #define STDIN_BUFFER_SIZE       (10 * 1024 * 1024)
+#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA)
+#include "pybind11/embed.h"
+namespace py = pybind11;
+extern std::stringstream engine_info;
+#else
+std::stringstream engine_info;
+#endif
 
 typedef struct {
     bool initialized;
@@ -103,6 +110,9 @@ void json_send_classification_response(int id,
             {"stdin", stdin_ms},
         }},
     };
+    if (engine_info.str().length() > 0) {
+        resp["info"] = engine_info.str();
+    }
     snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
 }
 
@@ -521,6 +531,17 @@ int main(int argc, char **argv) {
         printf("Edge Impulse Linux impulse runner - listening for JSON messages on stdin\n");
         return stdin_main();
     }
+#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA)
+    else if (strcmp(argv[1], "debug") == 0) {
+        py::scoped_interpreter guard{};
+        py::module_ sys = py::module_::import("sys");
+        ei_printf("DEBUG: sys.path:");
+        for (py::handle p: sys.attr("path")) {
+            ei_printf("\t%s\n", p.cast<std::string>().c_str());
+        }
+        return 0;
+    }
+#endif
     else {
         printf("Edge Impulse Linux impulse runner - listening for JSON messages on socket '%s'\n", argv[1]);
         return socket_main(argv[1]);
