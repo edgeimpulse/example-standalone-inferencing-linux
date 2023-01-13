@@ -3,7 +3,6 @@
 #include <cstring>
 #include <iostream>
 #include <sstream>
-// #include <thread>
 #include <chrono>
 #include <vector>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
@@ -548,5 +547,3 @@ int main(int argc, char **argv) {
     }
 }
 
-// {"id":1,"hello":1}
-// {"id":2,"classify":[3,4,5]}
