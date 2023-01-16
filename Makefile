@@ -1,4 +1,5 @@
 EI_SDK?=edge-impulse-sdk
+PYTHON_CROSS_PATH?=
 
 UNAME_S := $(shell uname -s)
 
@@ -10,8 +11,9 @@ CFLAGS += -Itflite-model
 CFLAGS += -Ithird_party/
 CFLAGS += -Os
 CFLAGS += -DNDEBUG
-CFLAGS += -DEI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP
+CFLAGS += -DEI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP=1
 CFLAGS += -g
+CFLAGS += -Wno-asm-operand-widths
 CXXFLAGS += -std=c++14
 LDFLAGS += -lm -lstdc++
 
@@ -29,32 +31,46 @@ CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -Itensorflow-lite/
 
 ifeq (${TARGET_LINUX_ARMV7},1)
-LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
+LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lflatbuffers -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo -lclog
 endif # TARGET_LINUX_ARMV7
 ifeq (${TARGET_LINUX_AARCH64},1)
+CFLAGS += -DDISABLEFLOAT16
 LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lclog -lpthread
 endif # TARGET_LINUX_AARCH64
 ifeq (${TARGET_LINUX_X86},1)
-LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthread
+LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo -lclog
 endif # TARGET_LINUX_X86
 ifeq (${TARGET_MAC_X86_64},1)
 LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lclog
 endif # TARGET_MAC_X86_64
 
-endif # USE_FULL_TFLITE
+else ifeq (${USE_AKIDA},1) # USE_FULL_TFLITE
 
-ifeq (${TARGET_JETSON_NANO},1)
-LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/ -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
-endif # TARGET_JETSON_NANO
+ifeq (${TARGET_LINUX_AARCH64},1)
+CFLAGS += -DDISABLEFLOAT16
+CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
+CFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --cflags)
+LDFLAGS += -rdynamic $(shell $(PYTHON_CROSS_PATH)python3-config --ldflags --embed)
+else ifeq (${TARGET_LINUX_X86},1) # TARGET_LINUX_AARCH64
+CFLAGS += $(shell python3-config --cflags)
+CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
+LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
+endif # TARGET_LINUX_X86
 
-# Neither Jetson Nano (TensorRT) and neither full TFLite? Then fall back to TFLM kernels
-ifneq (${TARGET_JETSON_NANO},1)
-ifneq (${USE_FULL_TFLITE},1)
+else # not USE_FULL_TFLITE and not USE_AKIDA
+
 CFLAGS += -DTF_LITE_DISABLE_X86_NEON=1
 CSOURCES += edge-impulse-sdk/tensorflow/lite/c/common.c
 CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
-endif # (${USE_FULL_TFLITE},1)
-endif # ifneq (${TARGET_JETSON_NANO},1)
+
+endif # not USE_FULL_TFLITE and not USE_AKIDA
+
+ifeq (${TARGET_JETSON_NANO},1)
+LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/ -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
+$(error Missing shared libraries for TensorRT. Install them via `sh ./tflite/linux-jetson-nano/download.sh`)
+endif
+endif # TARGET_JETSON_NANO
 
 ifeq (${APP_CUSTOM},1)
 NAME = custom
