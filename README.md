@@ -169,6 +169,31 @@ On the Renesas RZ/V2L you can also build with support for DRP-AI, this fully lev
     $ TARGET_RENESAS_RZV2L=1 make -j
     ```
 
+#### BrainChip AKD1000
+
+You can build EIM or other inferencing examples with the support for BrainChip AKD1000 NSoC. Currently, it is supported on Linux boards with x86_64 or AARCH64 architectures.
+To build the application with support for AKD1000 NSoC, you need a Python development library on your build system.
+
+1. Install dependencies
+    Check if you have an output for `python3-config --cflags` command. If you get `bash: command not found: python3-config`, then try to install it with
+    ```
+    $ apt install -y python3-dev`
+    ```
+    Also, install the Python `akida` library
+    ```
+    $ pip3 install akida
+    ```
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the `Meta TF Model` and build.
+1. Extract the content of the downloaded zip archive into this directory.
+1. Build your application with `USE_AKIDA=1`, for example:
+   
+    ```
+    $ USE_AKIDA=1 APP_EIM=1 TARGET_LINUX_AARCH64=1 make -j
+    ```
+
+In case of any issues during runtime, check [Troubleshooting](https://docs.edgeimpulse.com/docs/development-platforms/officially-supported-ai-accelerators/akd1000#troubleshooting) section in our official documentation for AKD1000 NSoc.
+
 ## Building .eim files
 
 To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:
