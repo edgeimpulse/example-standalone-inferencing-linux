@@ -1,0 +1,27 @@
+
+    postprocess:
+    data_layout: NCHW
+    preprocess:
+    crop:
+    - 160
+    - 160
+    data_layout: NCHW
+    mean:
+    - 0
+    - 0
+    - 0
+    resize:
+    - 160
+    - 160
+    scale:
+    - 1
+    - 1
+    - 1
+    session:
+    artifacts_folder: ''
+    model_folder: '.'
+    model_path: onnx-model/model-aux.onnx
+    session_name: onnxrt
+    target_device: pc
+    task_type: od
+    

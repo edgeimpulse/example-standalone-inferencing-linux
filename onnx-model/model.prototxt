@@ -1,0 +1,34 @@
+name: "yolo_v3"
+tidl_yolo {
+  yolo_param {
+    input: "709"
+    anchor_width: 8.0
+    anchor_height: 8.0
+  }
+  yolo_param {
+    input: "843"
+    anchor_width: 16.0
+    anchor_height: 16.0
+  }
+  yolo_param {
+    input: "977"
+    anchor_width: 32.0
+    anchor_height: 32.0
+  }
+  detection_output_param {
+    num_classes: 1
+    share_location: true
+    background_label_id: -1
+    nms_param {
+      nms_threshold: 0.65
+      top_k: 500
+    }
+    code_type: CODE_TYPE_YOLO_X
+    keep_top_k: 200
+    confidence_threshold: 0.01
+  }
+  name: "yolo_v3"
+  in_width: 160
+  in_height: 160
+  output: "detections"
+}

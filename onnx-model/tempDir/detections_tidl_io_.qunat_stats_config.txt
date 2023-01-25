@@ -1,0 +1,13 @@
+inFileFormat    = 1
+numFrames   = 2
+postProcType   = 0
+postProcDataId   = 0
+quantRangeUpdateFactor   = -1.000000
+inData   = /app/build/onnx-model/tempDir/detections_calib_raw_data.bin
+outData   = "/app/build/onnx-model/tempDir/detections_tidl_io__stats_tool_out.bin"
+netBinFile     = /app/build/onnx-model/tempDir/detections_tidl_net.bin
+ioConfigFile        = /app/build/onnx-model/tempDir/detections_tidl_io_1.bin
+flowCtrl        = 3
+writeTraceLevel        = 0
+debugTraceLevel        = 0
+traceDumpBaseName        = "/app/build/onnx-model/tempDir/detections_tidl_io_
