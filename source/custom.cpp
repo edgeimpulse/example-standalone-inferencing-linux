@@ -26,6 +26,7 @@
 #include <sstream>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include "inc/bitmap_helper.h"
+#include <zip.h>
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
@@ -69,10 +70,18 @@ int main(int argc, char **argv) {
 
     std::vector<float> raw_features;
 
+    /***********************************/
+    zip_error_t error;
+
     extern uint8_t zip_data[]      asm("_binary__home_output_tidl_model_artifacts_zip_start");
     extern uint8_t zip_data_size[] asm("_binary__home_output_tidl_model_artifacts_zip_size");
     extern uint8_t zip_data_end[]  asm("_binary__home_output_tidl_model_artifacts_zip_end");
-    printf("LOG_INFO: sizeof zip_bin = %d\n", (size_t)((void *)zip_data_size));
+    printf("LOG_INFO: sizeof zip_bin = %d\n", (size_t)((void *)zip_data));
+
+    zip_source_t *zs = zip_source_buffer_create(zip_data, sizeof(zip_data), 0, &error);
+
+
+    /**********************************/
 
     while (std::getline(ss, token, ',')) {
         raw_features.push_back(std::stof(trim(token)));

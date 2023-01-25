@@ -26,7 +26,7 @@ endif
 
 ifeq (${TARGET_TDA4VM},1)
 CFLAGS += -I${TIDL_TOOLS_PATH}
-LDFLAGS +=  -L./tflite/linux-ti-tda4vm -lti_rpmsg_char -lvx_tidl_rt
+LDFLAGS +=  -L./tflite/linux-ti-tda4vm -L/usr/lib -lti_rpmsg_char -lvx_tidl_rt
 
 ifeq (${USE_ONNX},1)
 MODEL_TYPE=onnx
