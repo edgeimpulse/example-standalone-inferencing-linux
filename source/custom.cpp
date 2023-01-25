@@ -69,6 +69,11 @@ int main(int argc, char **argv) {
 
     std::vector<float> raw_features;
 
+    extern uint8_t zip_data[]      asm("_binary__home_output_tidl_model_artifacts_zip_start");
+    extern uint8_t zip_data_size[] asm("_binary__home_output_tidl_model_artifacts_zip_size");
+    extern uint8_t zip_data_end[]  asm("_binary__home_output_tidl_model_artifacts_zip_end");
+    printf("LOG_INFO: sizeof zip_bin = %d\n", (size_t)((void *)zip_data_size));
+
     while (std::getline(ss, token, ',')) {
         raw_features.push_back(std::stof(trim(token)));
     }
