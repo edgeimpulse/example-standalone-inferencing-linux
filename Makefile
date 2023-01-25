@@ -105,6 +105,7 @@ else
 $(error Missing application, should have either APP_CUSTOM=1, APP_AUDIO=1, APP_CAMERA=1, APP_COLLECT=1 or APP_EIM=1)
 endif
 
+ZIPOBJECTS += $(wildcard ./output/tidl_model_artifacts.zip.o)
 COBJECTS := $(patsubst %.c,%.o,$(CSOURCES))
 CXXOBJECTS := $(patsubst %.cpp,%.o,$(CXXSOURCES))
 CCOBJECTS := $(patsubst %.cc,%.o,$(CCSOURCES))
@@ -128,7 +129,7 @@ $(CCOBJECTS) : %.o : %.cc
 
 runner: $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS)
 	mkdir -p build
-	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) -o build/$(NAME) $(LDFLAGS)
+	$(CXX) $(COBJECTS) $(CXXOBJECTS) $(CCOBJECTS) $(ZIPOBJECTS) -o build/$(NAME) $(LDFLAGS)
 
 clean:
 	rm -f $(COBJECTS)

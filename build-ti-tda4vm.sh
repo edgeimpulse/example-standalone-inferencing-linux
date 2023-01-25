@@ -19,4 +19,4 @@ echo "clean build"
 APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 CC=aarch64-none-linux-gnu-gcc CXX=aarch64-none-linux-gnu-g++ make clean
 
 echo "Build the bin..."
-APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 CC=aarch64-none-linux-gnu-gcc CXX=aarch64-none-linux-gnu-g++ make
+APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 CC=aarch64-none-linux-gnu-gcc CXX=aarch64-none-linux-gnu-g++ make -j
