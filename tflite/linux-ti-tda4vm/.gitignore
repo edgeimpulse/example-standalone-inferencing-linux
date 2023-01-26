@@ -1,0 +1,3 @@
+*.zip
+libti_rpmsg_char.so
+libvx_tidl_rt.so
