@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
     signal_t signal;
     numpy::signal_from_buffer(&raw_features[0], raw_features.size(), &signal);
 
-    EI_IMPULSE_ERROR res = run_classifier(&signal, &result, false);
+    EI_IMPULSE_ERROR res = run_classifier(&signal, &result, true);
     printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
         result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
