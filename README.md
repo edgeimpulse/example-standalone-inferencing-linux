@@ -194,6 +194,44 @@ To build the application with support for AKD1000 NSoC, you need a Python develo
 
 In case of any issues during runtime, check [Troubleshooting](https://docs.edgeimpulse.com/docs/development-platforms/officially-supported-ai-accelerators/akd1000#troubleshooting) section in our official documentation for AKD1000 NSoc.
 
+#### Texas Instruments TDA4VM - TI Deep Learning (TIDL)
+
+On the Texas Instruments TDA4VM you can also build with support for TIDL, this fully leverages the Deep Learning Accelerator on the Texas Instruments TDA4VM.
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TIDL-RT Library', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Build your application with:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_TDA4VM=1 make -j
+    ```
+
+To build for ONNX runtime:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
+    ```
+
+**Note: Follow these steps to run the app/eim**
+
+The application/eim built is looking for the `tflite-model` or `onnx-model` (from TIDL-RT Library) on the file system.
+
+1. Copy the TIDL-RT Library archive downloaded and your app to the TDA4VM.
+1. Extract the TIDL-RT library.
+1. You should have the following directory structure:
+
+```
+.
+|-- <your_model_eim_or_app>
+|-- edge-impulse-sdk/
+|-- model-parameters/
+|-- onnx-model/
+|-- tflite-model/
+`-- tvm-model/
+`
+```
+
 ## Building .eim files
 
 To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:

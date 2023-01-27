@@ -26,6 +26,21 @@ USE_FULL_TFLITE=1
 TARGET_LINUX_AARCH64=1
 endif
 
+ifeq (${TARGET_TDA4VM},1)
+CFLAGS += -I${TIDL_TOOLS_PATH} -I${TIDL_TOOLS_PATH}/osrt_deps
+LDFLAGS +=  -L./tidl-rt/linux-aarch64 -lti_rpmsg_char -lvx_tidl_rt
+
+ifeq (${USE_ONNX},1)
+CFLAGS += -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime/core/session
+CFLAGS += -DDISABLEFLOAT16 -DXNN_ENABLE=0
+LDFLAGS += -Wl,--no-as-needed -lonnxruntime -ldl -ldlr -lpthread #-lpcre -lffi -lz -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -ltbb -ljpeg -lwebp -lpng16 -ltiff -lyaml-cpp
+
+else
+USE_FULL_TFLITE=1
+TARGET_LINUX_AARCH64=1
+endif
+endif
+
 ifeq (${USE_FULL_TFLITE},1)
 CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -Itensorflow-lite/
@@ -38,7 +53,7 @@ CFLAGS += -DDISABLEFLOAT16
 LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lclog -lpthread
 endif # TARGET_LINUX_AARCH64
 ifeq (${TARGET_LINUX_X86},1)
-LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo -lclog
+LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lclog -lpthread
 endif # TARGET_LINUX_X86
 ifeq (${TARGET_MAC_X86_64},1)
 LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lclog
