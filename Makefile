@@ -27,13 +27,17 @@ TARGET_LINUX_AARCH64=1
 endif
 
 ifeq (${TARGET_TDA4VM},1)
+CFLAGS += -I${TIDL_TOOLS_PATH} -I${TIDL_TOOLS_PATH}/osrt_deps
+LDFLAGS +=  -L./tidl-rt/linux-aarch64 -lti_rpmsg_char -lvx_tidl_rt
+
+ifeq (${USE_ONNX},1)
+CFLAGS += -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime/core/session
+CFLAGS += -DDISABLEFLOAT16 -DXNN_ENABLE=0
+LDFLAGS += -Wl,--no-as-needed -lonnxruntime -ldl -ldlr -lpthread #-lpcre -lffi -lz -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -ltbb -ljpeg -lwebp -lpng16 -ltiff -lyaml-cpp
+
+else
 USE_FULL_TFLITE=1
 TARGET_LINUX_AARCH64=1
-CFLAGS += -I${TIDL_TOOLS_PATH}
-LDFLAGS +=  -L./tflite/linux-ti-tda4vm -lti_rpmsg_char -lvx_tidl_rt
-
-ifeq (,$(wildcard ./tflite/linux-ti-tda4vm/libvx_tidl_rt.so))
-$(error Missing shared libraries for TIDL. Install them via `sh ./tflite/linux-ti-tda4vm/download.sh`)
 endif
 endif
 
