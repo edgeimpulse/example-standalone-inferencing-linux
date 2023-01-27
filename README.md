@@ -201,16 +201,16 @@ On the Texas Instruments TDA4VM you can also build with support for TIDL, this f
 1. Go to the **Deployment** page in the Edge Impulse Studio.
 1. Select the 'TIDL-RT Library', and the 'float32' optimizations.
 1. Build the library and copy the folders into this repository.
-1. Download the shared libraries via:
-
-    ```
-    $ sh ./tflite/linux-ti-tda4vm/download.sh
-    ```
-
 1. Build your application with:
 
     ```
     $ APP_CUSTOM=1 TARGET_TDA4VM=1 make -j
+    ```
+
+To build for ONNX runtime:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
     ```
 
 ## Building .eim files
