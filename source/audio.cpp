@@ -38,7 +38,6 @@ int microphone_audio_signal_get_data(size_t, size_t, float *);
 #define SLICE_LENGTH_VALUES  (EI_CLASSIFIER_RAW_SAMPLE_COUNT / (1000 / SLICE_LENGTH_MS))
 
 static bool use_debug = false; // Set this to true to see e.g. features generated from the raw signal and log WAV files
-static bool use_maf = false; // Set this (can be done from command line) to enable the moving average filter
 
 static int16_t classifier_buffer[EI_CLASSIFIER_RAW_SAMPLE_COUNT * sizeof(int16_t)]; // full classifier buffer
 
@@ -231,14 +230,6 @@ void classify_current_buffer() {
         return;
     }
 
-    // if moving average filter is enabled then smooth out the predictions
-    if (use_maf) {
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            result.classification[ix].value =
-                run_moving_average_filter(&classifier_maf[ix], result.classification[ix].value);
-        }
-    }
-
     printf("%d ms. ", result.timing.dsp + result.timing.classification);
     for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
         printf("%s: %.05f", result.classification[ix].label, result.classification[ix].value);
@@ -268,11 +259,6 @@ int main(int argc, char **argv)
     card = argv[1];
 
     for (int ix = 2; ix < argc; ix++) {
-        if (strcmp(argv[ix], "--moving-average-filter") == 0) {
-            printf("Enabling moving average filter\n");
-            use_maf = true;
-        }
-
         if (strcmp(argv[ix], "--debug") == 0) {
             printf("Enabling debug mode\n");
             use_debug = true;
@@ -285,11 +271,6 @@ int main(int argc, char **argv)
     }
 
     signal(SIGINT, close_alsa);
-
-    // clear out the moving average filter
-    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-        clear_moving_average_filter(&classifier_maf[ix]);
-    }
 
     // allocate buffers for the slice
     int16_t slice_buffer[SLICE_LENGTH_VALUES * sizeof(int16_t)];
