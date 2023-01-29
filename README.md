@@ -17,7 +17,7 @@ This library lets you run machine learning models and collect sensor data on Lin
     **Linux**
 
     ```
-    $ sudo apt install libasound2
+    $ sudo apt install libasound2-dev
     $ sh build-opencv-linux.sh          # only needed if you want to run the camera example
     ```
 
@@ -229,7 +229,7 @@ The application/eim built is looking for the `tflite-model` or `onnx-model` (fro
 |-- onnx-model/
 |-- tflite-model/
 `-- tvm-model/
-`
+
 ```
 
 ## Building .eim files
