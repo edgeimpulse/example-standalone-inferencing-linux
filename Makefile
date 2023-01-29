@@ -93,7 +93,6 @@ CXXSOURCES += source/custom.cpp
 else ifeq (${APP_AUDIO},1)
 NAME = audio
 CXXSOURCES += source/audio.cpp
-CFLAGS += -I/usr/include/
 LDFLAGS += -lasound
 else ifeq (${APP_CAMERA},1)
 NAME = camera
