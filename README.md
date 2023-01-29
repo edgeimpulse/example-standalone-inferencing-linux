@@ -21,7 +21,7 @@ This library lets you run machine learning models and collect sensor data on Lin
     $ sh build-opencv-linux.sh          # only needed if you want to run the camera example
     ```
 
-> Note: If you can't find `alsa/asoundlib.h` during building you may need to reboot after installing libasound2 to see effects.
+    > Note: If you can't find `alsa/asoundlib.h` during building you may need to reboot after installing libasound2 to see effects.
 
     **macOS**
 
