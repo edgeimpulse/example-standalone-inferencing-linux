@@ -211,9 +211,9 @@ On the Texas Instruments TDA4VM you can also build with support for TIDL, this f
 
 To build for ONNX runtime:
 
-    ```
-    $ APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
-    ```
+```
+$ APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
+```
 
 **Note: Follow these steps to run the app/eim**
 
