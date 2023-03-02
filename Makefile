@@ -81,10 +81,15 @@ CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcar
 endif # not USE_FULL_TFLITE and not USE_AKIDA
 
 ifeq (${TARGET_JETSON_NANO},1)
+TENSORRT_VERSION=$(strip $(shell dpkg -l | grep '^ii' | grep libnvinfer[0-9] | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//'))
+$(info TENSORRT_VERSION is ${TENSORRT_VERSION})
+ifeq (${TENSORRT_VERSION},8)
 LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/ -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
-ifeq (,$(wildcard ./tflite/linux-jetson-nano/libcudart.so))
-$(error Missing shared libraries for TensorRT. Install them via `sh ./tflite/linux-jetson-nano/download.sh`)
-endif
+else ifeq (${TENSORRT_VERSION},7)
+LDFLAGS += tflite/linux-jetson-nano/libei_debug7.a -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/ -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+else
+$(error Invalid TensorRT version - supported versions are 7 and 8.)
+endif # TENSORRT_VERSION
 endif # TARGET_JETSON_NANO
 
 ifeq (${APP_CUSTOM},1)
