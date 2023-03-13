@@ -9,6 +9,7 @@ CFLAGS += -Isource
 CFLAGS += -Imodel-parameters
 CFLAGS += -Itflite-model
 CFLAGS += -Ithird_party/
+CFLAGS += -Iutils/
 CFLAGS += -Os
 CFLAGS += -DNDEBUG
 CFLAGS += -DEI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP=1
