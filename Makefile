@@ -88,6 +88,7 @@ else ifeq (${TARGET_LINUX_X86},1)
 CFLAGS += $(shell python3-config --cflags)
 CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
 LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
+endif # USE_MEMRYX && TARGET_LINUX_X86
 endif # USE_MEMRYX
 
 ifeq (${TARGET_JETSON_NANO},1)
