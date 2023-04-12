@@ -178,3 +178,9 @@ $ APP_EIM=1 make -j
 ```
 
 The model will be placed in `build/model.eim` and can be used directly by your application.
+
+## Troubleshooting
+
+### Failed to allocate TFLite arena (0 bytes)
+
+If you see the error above, then you should be building with [hardware acceleration enabled](#hardware-acceleration). The reason is that when running without hardware optimizations enabled we run under TensorFlow Lite Micro and your model is not supported there (most likely you have unsupported ops or your model is too big for TFLM) - which is why we couldn't determine the arena size. Enabling hardware acceleration switches to full TensorFlow Lite.
