@@ -15,13 +15,105 @@
 using namespace std;
 
 #define STDIN_BUFFER_SIZE       (10 * 1024 * 1024)
+#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA)
+#include "pybind11/embed.h"
+namespace py = pybind11;
+extern std::stringstream engine_info;
+#else
+std::stringstream engine_info;
+#endif
 
 typedef struct {
     bool initialized;
     int version;
 } runner_state_t;
 
+#if defined __GNUC__
+#define ALIGN(X) __attribute__((aligned(X)))
+#elif defined _MSC_VER
+#define ALIGN(X) __declspec(align(X))
+#elif defined __TASKING__
+#define ALIGN(X) __align(X)
+#endif
+
+static char rapidjson_buffer[10 * 1024 * 1024] ALIGN(8);
+rapidjson::MemoryPoolAllocator<> rapidjson_allocator(rapidjson_buffer, sizeof(rapidjson_buffer));
+
 static runner_state_t state = { 0 };
+
+void json_send_classification_response(int id,
+                                       uint64_t json_parsing_ms,
+                                       uint64_t stdin_ms,
+                                       EI_IMPULSE_ERROR res,
+                                       ei_impulse_result_t *result_ptr,
+                                       char *resp_buffer,
+                                       size_t resp_buffer_size)
+{
+    ei_impulse_result_t result = *result_ptr;
+
+    if (res != 0) {
+        char err_msg[128];
+        snprintf(err_msg, 128, "Classifying failed, error code was %d", (int)res);
+
+        nlohmann::json err = {
+            {"id", id},
+            {"success", false},
+            {"error", err_msg},
+        };
+        snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+        return;
+    }
+
+#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+    nlohmann::json bb_res = nlohmann::json::array();
+    for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
+        auto bb = result.bounding_boxes[ix];
+        if (bb.value == 0) {
+            continue;
+        }
+        nlohmann::json bb_json = {
+            {"label", bb.label},
+            {"value", bb.value},
+            {"x", bb.x},
+            {"y", bb.y},
+            {"width", bb.width},
+            {"height", bb.height},
+        };
+        bb_res.push_back(bb_json);
+    }
+#else
+    nlohmann::json classify_res;
+    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+        classify_res[result.classification[ix].label] = result.classification[ix].value;
+    }
+#endif
+
+    nlohmann::json resp = {
+        {"id", id},
+        {"success", true},
+        {"result", {
+#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+            {"bounding_boxes", bb_res},
+#else
+            {"classification", classify_res},
+#endif // EI_CLASSIFIER_OBJECT_DETECTION
+#if EI_CLASSIFIER_HAS_ANOMALY == 1
+            {"anomaly", result.anomaly},
+#endif // EI_CLASSIFIER_HAS_ANOMALY == 1
+        }},
+        {"timing", {
+            {"dsp", result.timing.dsp},
+            {"classification", result.timing.classification},
+            {"anomaly", result.timing.anomaly},
+            {"json", json_parsing_ms},
+            {"stdin", stdin_ms},
+        }},
+    };
+    if (engine_info.str().length() > 0) {
+        resp["info"] = engine_info.str();
+    }
+    snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
+}
 
 void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t resp_buffer_size, uint64_t json_parsing_ms, uint64_t stdin_ms) {
     rapidjson::Value& id_v = msg["id"];
@@ -38,6 +130,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
     rapidjson::Value& version = msg["hello"];
     rapidjson::Value& classify_data = msg["classify"];
+    rapidjson::Value& classify_data_continuous = msg["classify_continuous"];
 
     if (version.IsInt()) {
         if (state.initialized) {
@@ -60,6 +153,8 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             return;
         }
 
+        run_classifier_init();
+
         vector<std::string> labels;
         for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
             labels.push_back(std::string(ei_classifier_inferencing_categories[ix]));
@@ -78,10 +173,14 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         }
 
 #if EI_CLASSIFIER_OBJECT_DETECTION
+    #if EI_CLASSIFIER_OBJECT_DETECTION_LAST_LAYER == EI_CLASSIFIER_LAST_LAYER_FOMO
+        const char *model_type = "constrained_object_detection";
+    #elif EI_CLASSIFIER_OBJECT_DETECTION
         const char *model_type = "object_detection";
+    #endif // EI_CLASSIFIER_OBJECT_DETECTION_LAST_LAYER
 #else
-        const char *model_type = "classification";
-#endif
+    const char *model_type = "classification";
+#endif // EI_CLASSIFIER_OBJECT_DETECTION
 
         nlohmann::json resp = {
             {"id", id},
@@ -106,6 +205,8 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 {"has_anomaly", EI_CLASSIFIER_HAS_ANOMALY},
                 {"labels", labels},
                 {"model_type", model_type},
+                {"slice_size", EI_CLASSIFIER_SLICE_SIZE},
+                {"use_continuous_mode", EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE},
             }},
         };
 
@@ -165,9 +266,29 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         }
 
         EI_IMPULSE_ERROR res = run_classifier(&signal, &result, debug);
-        if (res != 0) {
+        json_send_classification_response(id, json_parsing_ms, stdin_ms,
+            res, &result, resp_buffer, resp_buffer_size);
+    }
+    else if (classify_data_continuous.IsArray()) {
+        vector<float> input_features;
+
+        for (rapidjson::SizeType i = 0; i < classify_data_continuous.Size(); i++) {
+            if (!classify_data_continuous[i].IsNumber()) {
+                nlohmann::json err = {
+                    {"id", id},
+                    {"success", false},
+                    {"error", "Failed to parse classify array, should contain all numbers"},
+                };
+                snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+                return;
+            }
+            input_features.push_back((float)classify_data_continuous[i].GetDouble());
+        }
+
+        if (input_features.size() != EI_CLASSIFIER_SLICE_SIZE) {
             char err_msg[128];
-            snprintf(err_msg, 128, "Classifying failed, error code was %d", (int)res);
+            snprintf(err_msg, 128, "Invalid number of features in 'classify_continuous', expected %d but got %d",
+                (int)EI_CLASSIFIER_SLICE_SIZE, (int)input_features.size());
 
             nlohmann::json err = {
                 {"id", id},
@@ -178,52 +299,20 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             return;
         }
 
-#if EI_CLASSIFIER_OBJECT_DETECTION == 1
-        nlohmann::json bb_res = nlohmann::json::array();
-        for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
-            auto bb = result.bounding_boxes[ix];
-            if (bb.value == 0) {
-                continue;
-            }
-            nlohmann::json bb_json = {
-                {"label", bb.label},
-                {"value", bb.value},
-                {"x", bb.x},
-                {"y", bb.y},
-                {"width", bb.width},
-                {"height", bb.height},
-            };
-            bb_res.push_back(bb_json);
-        }
-#else
-        nlohmann::json classify_res;
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            classify_res[result.classification[ix].label] = result.classification[ix].value;
-        }
-#endif
+        ei_impulse_result_t result;
+        memset(&result, 0, sizeof(ei_impulse_result_t));
+        signal_t signal;
+        numpy::signal_from_buffer(&input_features[0], input_features.size(), &signal);
 
-        nlohmann::json resp = {
-            {"id", id},
-            {"success", true},
-            {"result", {
-#if EI_CLASSIFIER_OBJECT_DETECTION == 1
-                {"bounding_boxes", bb_res},
-#else
-                {"classification", classify_res},
-#endif // EI_CLASSIFIER_OBJECT_DETECTION
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
-                {"anomaly", result.anomaly},
-#endif // EI_CLASSIFIER_HAS_ANOMALY == 1
-            }},
-            {"timing", {
-                {"dsp", result.timing.dsp},
-                {"classification", result.timing.classification},
-                {"anomaly", result.timing.anomaly},
-                {"json", json_parsing_ms},
-                {"stdin", stdin_ms},
-            }},
-        };
-        snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
+        bool debug = false;
+        rapidjson::Value &debug_v = msg["debug"];
+        if (debug_v.IsBool()) {
+            debug = debug_v.GetBool();
+        }
+
+        EI_IMPULSE_ERROR res = run_classifier_continuous(&signal, &result, debug, true);
+        json_send_classification_response(id, json_parsing_ms, stdin_ms,
+            res, &result, resp_buffer, resp_buffer_size);
     }
     else {
         nlohmann::json err = {
@@ -269,13 +358,15 @@ int stdin_main() {
                 try {
                     auto now = ei_read_timer_ms();
 
-                    rapidjson::Document msg;
+                    rapidjson::Document msg(&rapidjson_allocator);
                     msg.Parse(stdin_buffer);
 
                     // auto msg = json::parse(stdin_buffer);
                     auto json_parsing_ms = ei_read_timer_ms() - now;
                     json_message_handler(msg, response_buffer, STDIN_BUFFER_SIZE, json_parsing_ms, read_from_stdin);
                     printf("%s", response_buffer);
+
+                    rapidjson_allocator.Clear();
                 }
                 catch (const std::exception& e) {
                     nlohmann::json err = {
@@ -367,7 +458,7 @@ int socket_main(char *socket_path) {
                     try {
                         // printf("Incoming message: %s\n", stdin_buffer);
                         auto now = ei_read_timer_ms();
-                        rapidjson::Document msg;
+                        rapidjson::Document msg(&rapidjson_allocator);
                         msg.Parse(stdin_buffer);
                         // auto msg = json::parse(stdin_buffer);
                         auto json_parsing_ms = ei_read_timer_ms() - now;
@@ -377,6 +468,7 @@ int socket_main(char *socket_path) {
                         if (ret < 0) {
                             printf("ERR: Failed to send message back (%d)\n", ret);
                         }
+                        rapidjson_allocator.Clear();
                     }
                     catch (const std::exception& e) {
                         nlohmann::json err = {
@@ -438,8 +530,20 @@ int main(int argc, char **argv) {
         printf("Edge Impulse Linux impulse runner - listening for JSON messages on stdin\n");
         return stdin_main();
     }
+#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA)
+    else if (strcmp(argv[1], "debug") == 0) {
+        py::scoped_interpreter guard{};
+        py::module_ sys = py::module_::import("sys");
+        ei_printf("DEBUG: sys.path:");
+        for (py::handle p: sys.attr("path")) {
+            ei_printf("\t%s\n", p.cast<std::string>().c_str());
+        }
+        return 0;
+    }
+#endif
     else {
         printf("Edge Impulse Linux impulse runner - listening for JSON messages on socket '%s'\n", argv[1]);
         return socket_main(argv[1]);
     }
 }
+

@@ -17,9 +17,11 @@ This library lets you run machine learning models and collect sensor data on Lin
     **Linux**
 
     ```
-    $ sudo apt install libasound2
+    $ sudo apt install libasound2-dev
     $ sh build-opencv-linux.sh          # only needed if you want to run the camera example
     ```
+
+    > Note: If you can't find `alsa/asoundlib.h` during building you may need to reboot after installing libasound2 to see effects.
 
     **macOS**
 
@@ -168,6 +170,50 @@ On the Renesas RZ/V2L you can also build with support for DRP-AI, this fully lev
     ```
     $ TARGET_RENESAS_RZV2L=1 make -j
     ```
+
+#### BrainChip AKD1000
+
+You can build EIM or other inferencing examples with the support for BrainChip AKD1000 NSoC. Currently, it is supported on Linux boards with x86_64 or AARCH64 architectures.
+To build the application with support for AKD1000 NSoC, you need a Python development library on your build system.
+
+1. Install dependencies
+    Check if you have an output for `python3-config --cflags` command. If you get `bash: command not found: python3-config`, then try to install it with
+    ```
+    $ apt install -y python3-dev`
+    ```
+    Also, install the Python `akida` library
+    ```
+    $ pip3 install akida
+    ```
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the `Meta TF Model` and build.
+1. Extract the content of the downloaded zip archive into this directory.
+1. Build your application with `USE_AKIDA=1`, for example:
+   
+    ```
+    $ USE_AKIDA=1 APP_EIM=1 TARGET_LINUX_AARCH64=1 make -j
+    ```
+
+In case of any issues during runtime, check [Troubleshooting](https://docs.edgeimpulse.com/docs/development-platforms/officially-supported-ai-accelerators/akd1000#troubleshooting) section in our official documentation for AKD1000 NSoc.
+
+#### Texas Instruments TDA4VM - TI Deep Learning (TIDL)
+
+On the Texas Instruments TDA4VM you can also build with support for TIDL, this fully leverages the Deep Learning Accelerator on the Texas Instruments TDA4VM.
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TIDL-RT Library', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Build your application with:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_TDA4VM=1 make -j
+    ```
+
+To build for ONNX runtime:
+
+```
+$ APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
+```
 
 ## Building .eim files
 
