@@ -126,7 +126,7 @@ $ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
 Build with the following flags:
 
 ```
-$ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 arch -x86_64 make -j
+$ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 arch -x86_64 /usr/bin/make -j
 ```
 
 Note that this does build an x86 binary, but it runs very fast through Rosetta.
@@ -189,7 +189,7 @@ To build the application with support for AKD1000 NSoC, you need a Python develo
 1. Select the `Meta TF Model` and build.
 1. Extract the content of the downloaded zip archive into this directory.
 1. Build your application with `USE_AKIDA=1`, for example:
-   
+
     ```
     $ USE_AKIDA=1 APP_EIM=1 TARGET_LINUX_AARCH64=1 make -j
     ```
