@@ -15,7 +15,8 @@
 using namespace std;
 
 #define STDIN_BUFFER_SIZE       (10 * 1024 * 1024)
-#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA)
+#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA) || \
+    (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_MEMRYX)
 #include "pybind11/embed.h"
 namespace py = pybind11;
 extern std::stringstream engine_info;
