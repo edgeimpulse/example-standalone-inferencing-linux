@@ -87,6 +87,9 @@ int main(int argc, char **argv) {
     EI_IMPULSE_ERROR res = run_classifier(&signal, &result, false);
     printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
         result.timing.dsp, result.timing.classification, result.timing.anomaly);
+    if (res != 0) {
+        return 1;
+    }
 
     printf("Begin output\n");
 
