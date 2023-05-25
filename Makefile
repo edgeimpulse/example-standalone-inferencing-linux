@@ -85,9 +85,13 @@ ifeq (${USE_MEMRYX},1)
 ifeq (${TARGET_LINUX_AARCH64},1)
 $(error MemryX drivers and runtime do not support AARCH64)
 else ifeq (${TARGET_LINUX_X86},1)
+ifdef (${EI_CLASSIFIER_USE_MEMRYX_SOFTWARE},1)
 CFLAGS += $(shell python3-config --cflags)
 CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
 LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
+else
+LDFLAGS += -lmemx
+endif # USE_MEMRYX_SOFTWARE
 endif # USE_MEMRYX && TARGET_LINUX_X86
 endif # USE_MEMRYX
 
