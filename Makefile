@@ -83,7 +83,21 @@ CFLAGS += -DTF_LITE_DISABLE_X86_NEON=1
 CSOURCES += edge-impulse-sdk/tensorflow/lite/c/common.c
 CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
 
-endif # not USE_FULL_TFLITE and not USE_AKIDA
+endif # not USE_FULL_TFLITE
+
+ifeq (${USE_MEMRYX},1)
+ifeq (${TARGET_LINUX_AARCH64},1)
+$(error MemryX drivers and runtime do not support AARCH64)
+else ifeq (${TARGET_LINUX_X86},1)
+ifdef (${EI_CLASSIFIER_USE_MEMRYX_SOFTWARE},1)
+CFLAGS += $(shell python3-config --cflags)
+CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
+LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
+else
+LDFLAGS += -lmemx
+endif # USE_MEMRYX_SOFTWARE
+endif # USE_MEMRYX && TARGET_LINUX_X86
+endif # USE_MEMRYX
 
 ifeq (${TARGET_JETSON_NANO},1)
 TENSORRT_VERSION=$(strip $(shell dpkg -l | grep '^ii' | grep libnvinfer[0-9] | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//'))
