@@ -230,3 +230,23 @@ The model will be placed in `build/model.eim` and can be used directly by your a
 ### Failed to allocate TFLite arena (0 bytes)
 
 If you see the error above, then you should be building with [hardware acceleration enabled](#hardware-acceleration). The reason is that when running without hardware optimizations enabled we run under TensorFlow Lite Micro and your model is not supported there (most likely you have unsupported ops or your model is too big for TFLM) - which is why we couldn't determine the arena size. Enabling hardware acceleration switches to full TensorFlow Lite.
+
+### Make sure you apply/link the Flex delegate before inference.
+
+On Linux platforms without a GPU or neural accelerator your model is ran using TensorFlow Lite. Not every model can be represented using native TensorFlow Lite operators; and for these models 'Flex' ops are injected in the model. To run these models you'll need to link with the flex delegate shared library when compiling your model, and then have this library installed on any device where you run the model. If this is the case you'll seen an error like:
+
+```
+ERROR: Regular TensorFlow ops are not supported by this interpreter. Make sure you apply/link the Flex delegate before inference.
+ERROR: Node number 33 (FlexErf) failed to prepare.
+```
+
+To solve this:
+
+1. Download the flex delegates shared library via:
+
+    ```
+    bash tflite/download_flex_delegates.sh
+    ```
+
+2. Build your application with `LINK_TFLITE_FLEX_LIBRARY=1` .
+3. Copy the shared library for your platform to `/usr/lib` or `/usr/local/lib` to run your application (see [Docs: Flex delegates](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux/flex-delegates)).

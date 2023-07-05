@@ -60,6 +60,10 @@ ifeq (${TARGET_MAC_X86_64},1)
 LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lclog
 endif # TARGET_MAC_X86_64
 
+ifeq (${LINK_TFLITE_FLEX_LIBRARY},1)
+LDFLAGS += -ltensorflowlite_flex_2.6.5
+endif
+
 else ifeq (${USE_AKIDA},1) # USE_FULL_TFLITE
 
 ifeq (${TARGET_LINUX_AARCH64},1)
