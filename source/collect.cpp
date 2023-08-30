@@ -86,9 +86,9 @@ int main() {
     // Periodically call `sensor_aq_add_data` (every 10 ms. in this example) to append data
     for (int ix = 0; ix < 100 * 2; ix++) {
         float values[3] = {
-            sin((float)ix * 0.1f) * 10.0f,
-            cos((float)ix * 0.1f) * 10.0f,
-            (sin((float)ix * 0.1f) + cos((float)ix * 0.1f)) * 10.0f,
+            (float) sin((float)ix * 0.1f) * 10.0f,
+            (float) cos((float)ix * 0.1f) * 10.0f,
+            (float) (sin((float)ix * 0.1f) + cos((float)ix * 0.1f)) * 10.0f,
         };
 
         res = sensor_aq_add_data(&ctx, values, 3);
