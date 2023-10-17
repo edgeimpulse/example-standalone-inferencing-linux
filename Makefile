@@ -65,15 +65,19 @@ LDFLAGS += -ltensorflowlite_flex_2.6.5
 endif
 
 else ifeq (${USE_AKIDA},1) # USE_FULL_TFLITE
-
+CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
+CFLAGS += -Itensorflow-lite
+CFLAGS += -Iedge-impulse-sdk/third_party/gemmlowp
+CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
+LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lclog -lpthread
 ifeq (${TARGET_LINUX_AARCH64},1)
 CFLAGS += -DDISABLEFLOAT16
-CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
 CFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --cflags)
+LDFLAGS += -L./tflite/linux-aarch64
 LDFLAGS += -rdynamic $(shell $(PYTHON_CROSS_PATH)python3-config --ldflags --embed)
 else ifeq (${TARGET_LINUX_X86},1) # TARGET_LINUX_AARCH64
 CFLAGS += $(shell python3-config --cflags)
-CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
+LDFLAGS += -L./tflite/linux-x86_64
 LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
 endif # TARGET_LINUX_X86
 
