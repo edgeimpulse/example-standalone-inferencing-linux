@@ -15,10 +15,14 @@
 using namespace std;
 
 #define STDIN_BUFFER_SIZE       (10 * 1024 * 1024)
-#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA) || \
-    ((EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_MEMRYX) && \
+#if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA)
+#include "pybind11/embed.h"
+namespace py = pybind11;
+extern std::stringstream engine_info;
+#elif ((EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_MEMRYX) && \
       (EI_CLASSIFIER_USE_MEMRYX_SOFTWARE == 1))
 #include "pybind11/embed.h"
+using namespace pybind11::literals; // to bring in the `_a` literal
 namespace py = pybind11;
 extern std::stringstream engine_info;
 #elif ((EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_MEMRYX) && \
@@ -543,6 +547,11 @@ int main(int argc, char **argv) {
         for (py::handle p: sys.attr("path")) {
             ei_printf("\t%s\n", p.cast<std::string>().c_str());
         }
+        return 0;
+    }
+#elif (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_MEMRYX)
+    else if (strcmp(argv[1], "debug") == 0) {
+        printf("memryx inferencing engine selected\n");
         return 0;
     }
 #endif
