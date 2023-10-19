@@ -74,11 +74,11 @@ ifeq (${TARGET_LINUX_AARCH64},1)
 CFLAGS += -DDISABLEFLOAT16
 CFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --cflags)
 LDFLAGS += -L./tflite/linux-aarch64
-LDFLAGS += -rdynamic $(shell $(PYTHON_CROSS_PATH)python3-config --ldflags --embed)
+LDFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --ldflags --embed)
 else ifeq (${TARGET_LINUX_X86},1) # TARGET_LINUX_AARCH64
 CFLAGS += $(shell python3-config --cflags)
-LDFLAGS += -L./tflite/linux-x86_64
-LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
+LDFLAGS += -L./tflite/linux-x86
+LDFLAGS += $(shell python3-config --ldflags --embed)
 endif # TARGET_LINUX_X86
 
 else # not USE_FULL_TFLITE and not USE_AKIDA
