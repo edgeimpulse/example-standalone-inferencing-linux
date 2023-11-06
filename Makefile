@@ -27,6 +27,18 @@ USE_FULL_TFLITE=1
 TARGET_LINUX_AARCH64=1
 endif
 
+ifeq (${TARGET_AM68PA},1)
+TARGET_TDA4VM=1
+endif
+
+ifeq (${TARGET_AM62A},1)
+TARGET_TDA4VM=1
+endif
+
+ifeq (${TARGET_AM68A},1)
+TARGET_TDA4VM=1
+endif
+
 ifeq (${TARGET_TDA4VM},1)
 CFLAGS += -I${TIDL_TOOLS_PATH} -I${TIDL_TOOLS_PATH}/osrt_deps
 LDFLAGS +=  -L./tidl-rt/linux-aarch64 -lti_rpmsg_char -lvx_tidl_rt

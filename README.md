@@ -196,23 +196,59 @@ To build the application with support for AKD1000 NSoC, you need a Python develo
 
 In case of any issues during runtime, check [Troubleshooting](https://docs.edgeimpulse.com/docs/development-platforms/officially-supported-ai-accelerators/akd1000#troubleshooting) section in our official documentation for AKD1000 NSoc.
 
-#### Texas Instruments TDA4VM - TI Deep Learning (TIDL)
+#### Texas Instruments TDA4VM (AM68PA), AM62A, AM68A - TI Deep Learning (TIDL)
 
-On the Texas Instruments TDA4VM you can also build with support for TIDL, this fully leverages the Deep Learning Accelerator on the Texas Instruments TDA4VM.
+You can also build with support for TIDL, this fully leverages the Deep Learning Accelerator on the Texas Instruments TDA4VM (AM68PA), AM62A, AM68A.
+
+##### TDA4VM (AM68PA)
 
 1. Go to the **Deployment** page in the Edge Impulse Studio.
 1. Select the 'TIDL-RT Library', and the 'float32' optimizations.
 1. Build the library and copy the folders into this repository.
-1. Build your application with:
+1. Build your (.eim) application:
 
     ```
-    $ APP_CUSTOM=1 TARGET_TDA4VM=1 make -j
+    $ APP_EIM=1 TARGET_TDA4VM=1 make -j
     ```
 
 To build for ONNX runtime:
 
 ```
-$ APP_CUSTOM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
+$ APP_EIM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
+```
+
+##### TI AM62A
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TIDL-RT Library (AM62A)', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Build your (.eim) application:
+
+    ```
+    $ APP_EIM=1 TARGET_AM62A=1 make -j
+    ```
+
+To build for ONNX runtime:
+
+```
+$ APP_EIM=1 TARGET_AM62A=1 USE_ONNX=1 make -j
+```
+
+##### TI AM68A
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TIDL-RT Library (AM68A)', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Build your (.eim) application:
+
+    ```
+    $ APP_EIM=1 TARGET_AM68A=1 make -j
+    ```
+
+To build for ONNX runtime:
+
+```
+$ APP_CUSTOM=1 TARGET_AM68A=1 USE_ONNX=1 make -j
 ```
 
 ## Building .eim files
