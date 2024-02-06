@@ -216,6 +216,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 {"model_type", model_type},
                 {"slice_size", EI_CLASSIFIER_SLICE_SIZE},
                 {"use_continuous_mode", EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE},
+                {"inferencing_engine", EI_CLASSIFIER_INFERENCING_ENGINE},
             }},
         };
 

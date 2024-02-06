@@ -14,7 +14,9 @@ CFLAGS += -Os
 CFLAGS += -DNDEBUG
 CFLAGS += -DEI_CLASSIFIER_ENABLE_DETECTION_POSTPROCESS_OP=1
 CFLAGS += -g
-CFLAGS += -Wno-asm-operand-widths
+ifeq (${CC}, clang)
+	CFLAGS += -Wno-asm-operand-widths
+endif
 CXXFLAGS += -std=c++14
 LDFLAGS += -lm -lstdc++
 
@@ -52,6 +54,16 @@ else
 USE_FULL_TFLITE=1
 TARGET_LINUX_AARCH64=1
 endif
+endif
+
+ifeq (${TARGET_JETSON_ORIN},1)
+TARGET_JETSON=1
+TENSORRT_VERSION=8.5.2
+endif
+
+ifeq (${TARGET_JETSON_NANO},1)
+TARGET_JETSON=1
+TENSORRT_VERSION?=8
 endif
 
 ifeq (${USE_FULL_TFLITE},1)
@@ -115,17 +127,21 @@ endif # USE_MEMRYX_SOFTWARE
 endif # USE_MEMRYX && TARGET_LINUX_X86
 endif # USE_MEMRYX
 
-ifeq (${TARGET_JETSON_NANO},1)
-TENSORRT_VERSION=$(strip $(shell dpkg -l | grep '^ii' | grep libnvinfer[0-9] | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\+//'))
+ifeq (${TARGET_JETSON},1)
+TENSORRT_VERSION ?=8
 $(info TENSORRT_VERSION is ${TENSORRT_VERSION})
-ifeq (${TENSORRT_VERSION},8)
-LDFLAGS += tflite/linux-jetson-nano/libei_debug.a -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/ -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+ifeq (${TENSORRT_VERSION},8.5.2)
+TRT_LDFLAGS += -lei_debug -Ltflite/linux-jetson-nano/trt8.5.2/
+else ifeq (${TENSORRT_VERSION},8)
+TRT_LDFLAGS += -lei_debug -Ltflite/linux-jetson-nano/trt8/
 else ifeq (${TENSORRT_VERSION},7)
-LDFLAGS += tflite/linux-jetson-nano/libei_debug7.a -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/ -lcudart -lnvinfer -lnvonnxparser  -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+TRT_LDFLAGS += -lei_debug7 -Ltflite/linux-jetson-nano/trt7/
 else
 $(error Invalid TensorRT version - supported versions are 7 and 8.)
 endif # TENSORRT_VERSION
-endif # TARGET_JETSON_NANO
+TRT_LDFLAGS += -lcudart -lnvinfer -lnvonnxparser
+LDFLAGS += $(TRT_LDFLAGS) -Ltflite/linux-jetson-nano/ -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+endif # TARGET_JETSON
 
 ifeq (${APP_CUSTOM},1)
 NAME = custom
