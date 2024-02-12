@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
     printf("[");
     for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
         printf("%.5f", result.classification[ix].value);
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
+#if EI_CLASSIFIER_HAS_ANOMALY
         printf(", ");
 #else
         if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
         }
 #endif
     }
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
+#if EI_CLASSIFIER_HAS_ANOMALY
     printf("%.3f", result.anomaly);
 #endif
     printf("]\n");

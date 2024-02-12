@@ -106,7 +106,7 @@ void json_send_classification_response(int id,
 #else
             {"classification", classify_res},
 #endif // EI_CLASSIFIER_OBJECT_DETECTION
-#if EI_CLASSIFIER_HAS_ANOMALY == 1
+#if EI_CLASSIFIER_HAS_ANOMALY
             {"anomaly", result.anomaly},
 #endif // EI_CLASSIFIER_HAS_ANOMALY == 1
         }},
@@ -560,4 +560,3 @@ int main(int argc, char **argv) {
         return socket_main(argv[1]);
     }
 }
-
