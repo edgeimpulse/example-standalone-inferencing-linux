@@ -57,6 +57,7 @@ endif
 ifeq (${USE_FULL_TFLITE},1)
 CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -Itensorflow-lite/
+CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/custom/*.cc)
 
 ifeq (${TARGET_LINUX_ARMV7},1)
 LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lflatbuffers -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo -lclog
