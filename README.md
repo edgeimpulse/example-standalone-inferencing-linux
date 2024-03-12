@@ -133,9 +133,33 @@ Note that this does build an x86 binary, but it runs very fast through Rosetta.
 
 ### AARCH64 with AI Acceleration
 
-#### NVIDIA Jetson Nano - TensorRT
+#### NVIDIA Jetson Orin - TensorRT (JetPack 5.1.2)
 
-On the Jetson Nano you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Nano. Unfortunately this is currently not available for object detection models - which is why this is not enabled by default. To build with TensorRT:
+> NVIDIA Jetson AGX Orin Series, Jetson Orin NX Series, Jetson Orin Nano Series
+
+On the NVIDIA Jetson Orin you can also build with support for TensorRT, this fully leverages the GPU on the Jetson Orin. To build with TensorRT:
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TensorRT library', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Download the shared libraries via:
+
+    ```
+    $ sh ./tflite/linux-jetson-nano/download.sh
+    ```
+
+1. Build your application with:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_JETSON_ORIN=1 make -j
+    ```
+
+
+#### NVIDIA Jetson - TensorRT (JetPack 4.6.4)
+
+> NVIDIA Jetson Xavier NX Series, Jetson TX2 Series, Jetson AGX Xavier Series, Jetson Nano, Jetson TX1
+
+On the NVIDIA Jetson you can also build with support for TensorRT, this fully leverages the GPU on the Jetson. To build with TensorRT:
 
 1. Go to the **Deployment** page in the Edge Impulse Studio.
 1. Select the 'TensorRT library', and the 'float32' optimizations.
