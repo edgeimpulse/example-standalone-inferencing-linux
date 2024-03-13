@@ -57,12 +57,16 @@ endif
 endif
 
 ifeq (${TARGET_JETSON_ORIN},1)
-TARGET_JETSON=1
+TARGET_JETSON_COMMON=1
 TENSORRT_VERSION=8.5.2
 endif
 
 ifeq (${TARGET_JETSON_NANO},1)
 TARGET_JETSON=1
+endif
+
+ifeq (${TARGET_JETSON},1)
+TARGET_JETSON_COMMON=1
 TENSORRT_VERSION?=8
 endif
 
@@ -127,7 +131,7 @@ endif # USE_MEMRYX_SOFTWARE
 endif # USE_MEMRYX && TARGET_LINUX_X86
 endif # USE_MEMRYX
 
-ifeq (${TARGET_JETSON},1)
+ifeq (${TARGET_JETSON_COMMON},1)
 TENSORRT_VERSION ?=8
 $(info TENSORRT_VERSION is ${TENSORRT_VERSION})
 ifeq (${TENSORRT_VERSION},8.5.2)
@@ -141,7 +145,7 @@ $(error Invalid TensorRT version - supported versions are 7 and 8.)
 endif # TENSORRT_VERSION
 TRT_LDFLAGS += -lcudart -lnvinfer -lnvonnxparser
 LDFLAGS += $(TRT_LDFLAGS) -Ltflite/linux-jetson-nano/ -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
-endif # TARGET_JETSON
+endif # TARGET_JETSON_COMMON
 
 ifeq (${APP_CUSTOM},1)
 NAME = custom

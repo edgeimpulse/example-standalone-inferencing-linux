@@ -173,7 +173,7 @@ On the NVIDIA Jetson you can also build with support for TensorRT, this fully le
 1. Build your application with:
 
     ```
-    $ APP_CUSTOM=1 TARGET_JETSON_NANO=1 make -j
+    $ APP_CUSTOM=1 TARGET_JETSON=1 make -j
     ```
 
 Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. After this, the GPU seems to be warming up, so expect full performance about 2 minutes in. To do a fair performance comparison you probably want to use the custom application (no camera / microphone overhead) and run the classification in a loop.
