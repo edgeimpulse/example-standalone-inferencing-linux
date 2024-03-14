@@ -1,46 +1,33 @@
 #include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <string>
+#include <filesystem>
 #include <stdlib.h>
+#include "tflite/linux-jetson-nano/libeitrt.h"
 #include <map>
 
-#if EI_CLASSIFIER_USE_FULL_TFLITE
-#include <thread>
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/interpreter.h"
-#include "tensorflow/lite/kernels/register.h"
-#include "tensorflow/lite/model.h"
-#include "tensorflow/lite/optional_debug_tools.h"
-#include <filesystem>
-namespace fs = std::filesystem;
+#if __APPLE__
+#include <mach-o/dyld.h>
+#else
+#include <linux/limits.h>
+#endif
+
+EiTrt *ei_trt_handle = NULL;
+
+inline bool file_exists(char *model_file_name)
+{
+    if (FILE *file = fopen(model_file_name, "r")) {
+        fclose(file);
+        return true;
+    }
+    else {
+        return false;
+    }
+}
 
 #define ITERATION_COUNT         50
 #define ITERATION_COUNT_SSD     10
-
-#else
-#include <cmath>
-#include "edge-impulse-sdk/tensorflow/lite/micro/all_ops_resolver.h"
-#include "edge-impulse-sdk/tensorflow/lite/micro/micro_error_reporter.h"
-#include "edge-impulse-sdk/tensorflow/lite/micro/micro_interpreter.h"
-#include "edge-impulse-sdk/tensorflow/lite/schema/schema_generated.h"
-#include "edge-impulse-sdk/classifier/ei_aligned_malloc.h"
-#include "edge-impulse-sdk/tensorflow/lite/micro/kernels/micro_ops.h"
-
-static tflite::MicroErrorReporter micro_error_reporter;
-static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
-
-#define ITERATION_COUNT         10
-#define ITERATION_COUNT_SSD     1
-
-#define EI_TFLITE_RESOLVER static tflite::MicroMutableOpResolver<8> resolver; \
-    resolver.AddFullyConnected(); \
-    resolver.AddSoftmax(); \
-    resolver.AddAdd(); \
-    resolver.AddConv2D(); \
-    resolver.AddDepthwiseConv2D(); \
-    resolver.AddReshape(); \
-    resolver.AddMaxPool2D(); \
-    resolver.AddPad();
-
-#endif
 
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 #include "edge-impulse-sdk/dsp/numpy.hpp"
@@ -48,198 +35,146 @@ static tflite::ErrorReporter* error_reporter = &micro_error_reporter;
 #include "edge-impulse-sdk/classifier/ei_run_dsp.h"
 #include "model-parameters/model_metadata.h"
 #include "model-parameters/mfcc_input.h"
-#include "benchmark-nn/gestures-large-f32/tflite-trained.h"
-#include "benchmark-nn/gestures-large-i8/tflite-trained.h"
-#include "benchmark-nn/image-32-32-mobilenet-f32/tflite-trained.h"
-#include "benchmark-nn/image-32-32-mobilenet-i8/tflite-trained.h"
-#include "benchmark-nn/image-96-96-mobilenet-f32/tflite-trained.h"
-#include "benchmark-nn/image-96-96-mobilenet-i8/tflite-trained.h"
-#include "benchmark-nn/image-320-320-mobilenet-ssd-f32/tflite-trained.h"
-#include "benchmark-nn/keywords-2d-f32/tflite-trained.h"
-#include "benchmark-nn/keywords-2d-i8/tflite-trained.h"
+#include "benchmark-nn/gestures-large-f32/onnx-trained.h"
+//#include "benchmark-nn/gestures-large-i8/onnx-trained.h"
+#include "benchmark-nn/image-32-32-mobilenet-f32/onnx-trained.h"
+//#include "benchmark-nn/image-32-32-mobilenet-i8/onnx-trained.h"
+#include "benchmark-nn/image-96-96-mobilenet-f32/onnx-trained.h"
+//#include "benchmark-nn/image-96-96-mobilenet-i8/onnx-trained.h"
+//#include "benchmark-nn/image-320-320-mobilenet-ssd-f32/onnx-trained.h"
+#include "benchmark-nn/keywords-2d-f32/onnx-trained.h"
+//#include "benchmark-nn/keywords-2d-i8/onnx-trained.h"
 
 // You can toggle these on / off in case devices don't have enough flash to hold all of them in one go
 // just concat the output afterwards
-#define EI_CLASSIFIER_TFLITE_ARENA_SIZE     (80 * 1024)     // Update this to grab as much RAM as possible on embedded systems
 #define GESTURES_F32           1
-#define GESTURES_I8            1
+#define GESTURES_I8            0
 #define MOBILENET_32_32_F32    1
-#define MOBILENET_32_32_I8     1
+#define MOBILENET_32_32_I8     0
 #define MOBILENET_96_96_F32    1
-#define MOBILENET_96_96_I8     1
-#define MOBILENET_320_320_F32  1
+#define MOBILENET_96_96_I8     0
+#define MOBILENET_320_320_F32  0
 #define KEYWORDS_F32           1
-#define KEYWORDS_I8            1
+#define KEYWORDS_I8            0
 #define MFCC                   1
 
-#if EI_CLASSIFIER_USE_FULL_TFLITE
-int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tflite_len, int iterations, uint64_t *time_us) {
-    std::unique_ptr<tflite::FlatBufferModel> model = nullptr;
-    std::unique_ptr<tflite::Interpreter> interpreter = nullptr;
-    if (!model) {
-        model = tflite::FlatBufferModel::BuildFromBuffer((const char*)trained_tflite, trained_tflite_len);
-        if (!model) {
-            ei_printf("Failed to build TFLite model from buffer\n");
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
+int run_model_tensorrt(const unsigned char *trained_onnx, size_t trained_onnx_len, const char* hash, int iterations, uint64_t *time_us) {
 
-        tflite::ops::builtin::BuiltinOpResolver resolver;
-        tflite::InterpreterBuilder builder(*model, resolver);
-        builder(&interpreter);
+    static char current_exe_path[PATH_MAX] = { 0 };
 
-        if (!interpreter) {
-            ei_printf("Failed to construct interpreter\n");
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
-
-        if (interpreter->AllocateTensors() != kTfLiteOk) {
-            ei_printf("AllocateTensors failed\n");
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
-
-        int hw_thread_count = (int)std::thread::hardware_concurrency();
-        hw_thread_count -= 1; // leave one thread free for the other application
-        if (hw_thread_count < 1) {
-            hw_thread_count = 1;
-        }
-
-        if (interpreter->SetNumThreads(hw_thread_count) != kTfLiteOk) {
-            ei_printf("SetNumThreads failed\n");
-            return EI_IMPULSE_TFLITE_ERROR;
+#if __APPLE__
+    uint32_t len = PATH_MAX;
+    if (_NSGetExecutablePath(current_exe_path, &len) != 0) {
+        current_exe_path[0] = '\0'; // buffer too small
+    }
+    else {
+        // resolve symlinks, ., .. if possible
+        char *canonical_path = realpath(current_exe_path, NULL);
+        if (canonical_path != NULL)
+        {
+            strncpy(current_exe_path, canonical_path, len);
+            free(canonical_path);
         }
     }
-
-    auto start_us = ei_read_timer_us();
-
-    for (int ix = 0; ix < iterations; ix++) {
-        interpreter->Invoke();
+#else
+    int readlink_res = readlink("/proc/self/exe", current_exe_path, PATH_MAX);
+    if (readlink_res < 0) {
+        printf("readlink_res = %d\n", readlink_res);
+        current_exe_path[0] = '\0'; // failed to find location
     }
-
-    auto end_us = ei_read_timer_us();
-
-    *time_us = end_us - start_us;
-
-    return 0;
-}
-#else // TensorFlow Lite Micro
-int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tflite_len, int iterations, uint64_t *time_us) {
-    uint8_t *tensor_arena = (uint8_t*)ei_aligned_calloc(16, EI_CLASSIFIER_TFLITE_ARENA_SIZE);
-    if (tensor_arena == NULL) {
-        ei_printf("Failed to allocate TFLite arena (%d bytes)\n", EI_CLASSIFIER_TFLITE_ARENA_SIZE);
-        return EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED;
-    }
-
-    const tflite::Model* model = tflite::GetModel(trained_tflite);
-    if (model->version() != TFLITE_SCHEMA_VERSION) {
-        error_reporter->Report(
-            "Model provided is schema version %d not equal "
-            "to supported version %d.",
-            model->version(), TFLITE_SCHEMA_VERSION);
-        ei_aligned_free(tensor_arena);
-        return EI_IMPULSE_TFLITE_ERROR;
-    }
-
-    EI_TFLITE_RESOLVER;
-
-    tflite::MicroInterpreter *interpreter = new tflite::MicroInterpreter(
-        model, resolver, tensor_arena, EI_CLASSIFIER_TFLITE_ARENA_SIZE);
-
-    // Allocate memory from the tensor_arena for the model's tensors.
-    TfLiteStatus allocate_status = interpreter->AllocateTensors(true);
-    if (allocate_status != kTfLiteOk) {
-        error_reporter->Report("AllocateTensors() failed");
-        ei_aligned_free(tensor_arena);
-        return EI_IMPULSE_TFLITE_ERROR;
-    }
-
-    auto start_us = ei_read_timer_us();
-
-    for (int ix = 0; ix < iterations; ix++) {
-        TfLiteStatus invoke_status = interpreter->Invoke();
-        if (invoke_status != kTfLiteOk) {
-            error_reporter->Report("Invoke failed (%d)\n", invoke_status);
-            ei_aligned_free(tensor_arena);
-            return EI_IMPULSE_TFLITE_ERROR;
-        }
-    }
-
-    auto end_us = ei_read_timer_us();
-
-    *time_us = end_us - start_us;
-
-    delete interpreter;
-    ei_aligned_free(tensor_arena);
-
-    return 0;
-}
 #endif
+
+    static char model_file_name[PATH_MAX];
+
+    if (strlen(current_exe_path) == 0) {
+        // could not determine current exe path, use /tmp for the engine file
+        snprintf(
+            model_file_name,
+            PATH_MAX,
+            "/tmp/ei-%s.engine",
+            hash);
+    }
+    else {
+        std::filesystem::path p(current_exe_path);
+        snprintf(
+            model_file_name,
+            PATH_MAX,
+            "%s/%s-project-%s.engine",
+            p.parent_path().c_str(),
+            p.stem().c_str(),
+            hash);
+    }
+
+    bool fexists = file_exists(model_file_name);
+    if (!fexists) {
+        ei_printf("INFO: Model file '%s' does not exist, creating...\n", model_file_name);
+
+        FILE *file = fopen(model_file_name, "w");
+        if (!file) {
+            ei_printf("ERR: TensorRT init failed to open '%s'\n", model_file_name);
+            return EI_IMPULSE_TENSORRT_INIT_FAILED;
+        }
+
+        if (fwrite(trained_onnx, trained_onnx_len, 1, file) != 1) {
+            ei_printf("ERR: TensorRT init fwrite failed.\n");
+            return EI_IMPULSE_TENSORRT_INIT_FAILED;
+        }
+
+        if (fclose(file) != 0) {
+            ei_printf("ERR: TensorRT init fclose failed.\n");
+            return EI_IMPULSE_TENSORRT_INIT_FAILED;
+        }
+    }
+
+    uint32_t out_data_size = 80 * 1024;
+
+    float *out_data = (float*)ei_malloc(out_data_size * sizeof(float));
+    if (out_data == nullptr) {
+        ei_printf("ERR: Cannot allocate memory for output data \n");
+    }
+
+    // lazy initialize tensorRT context
+    if (ei_trt_handle == nullptr) {
+        ei_trt_handle = libeitrt::create_EiTrt(model_file_name, false);
+    }
+
+    uint32_t in_data_size = 80 * 1024;
+    float *in_data = (float*)ei_malloc(in_data_size * sizeof(float));
+    if (in_data == nullptr) {
+        ei_printf("ERR: Cannot allocate memory for input data \n");
+    }
+
+    // get the first loading of the model out of the way
+    auto load_start_us = ei_read_timer_us();
+    libeitrt::infer(ei_trt_handle, in_data, out_data, out_data_size);
+    auto load_end_us = ei_read_timer_us();
+    ei_printf("load time took %d\n", (int) (load_end_us - load_start_us));
+
+    auto start_us = ei_read_timer_us();
+
+    for (int ix = 0; ix < iterations; ix++) {
+        libeitrt::infer(ei_trt_handle, in_data, out_data, out_data_size);
+    }
+
+    auto end_us = ei_read_timer_us();
+
+    *time_us = end_us - start_us;
+
+    return 0;
+}
 
 int main(int argc, char **argv) {
     std::map<std::string, int> res;
 
     int it_count = ITERATION_COUNT;
-    int it_count_ssd = ITERATION_COUNT_SSD;
-
-    #if EI_CLASSIFIER_USE_FULL_TFLITE
-    if (argc > 1) {
-        for (int ix = 1; ix < argc; ix++) {
-            FILE *f = fopen(argv[ix], "rb");
-            if (f == NULL) {
-                ei_printf("ERR: Could not open file %s\n", argv[ix]);
-                return 1;
-            }
-
-            fseek(f, 0, SEEK_END);
-            auto lsize = ftell(f);
-            rewind(f);
-
-            int it_count_custom = it_count;
-
-            // more than 1MB?
-            if (lsize > 1 * 1024 * 1024) {
-                it_count_custom = 10;
-            }
-
-            uint8_t *data = (uint8_t*)malloc(lsize);
-            if (!data) {
-                ei_printf("ERR: Could not allocate buffer for file\n");
-                return 1;
-            }
-            fread(data, 100 * 1024 * 1024, 1, f);
-            fclose(f);
-
-            auto test_name = fs::path(argv[ix]).filename();
-
-            uint64_t time_us;
-            int iterations = it_count_custom;
-            int x = run_model_tflite_full((const unsigned char *)data, lsize, iterations, &time_us);
-            if (x != 0) {
-                ei_printf("ERR: Failed to run test (%d)\n", x);
-                return 1;
-            }
-
-            ei_printf("Test: %s\n", test_name.c_str());
-            ei_printf("Iterations: %d\n", iterations);
-            ei_printf("Total time: %d ms.\n", (int)(time_us / 1000));
-            ei_printf("Time per inference: %d us.\n", (int)(time_us / iterations));
-            ei_printf("\n");
-            res[test_name] = (int)(time_us / iterations);
-
-            free(data);
-        }
-
-        // time matters here (as we most likely run this from a job), so just run few iterations now
-        it_count = 5;
-        it_count_ssd = 3;
-    }
-    #endif
+    //int it_count_ssd = ITERATION_COUNT_SSD;
 
     #if GESTURES_F32
     {
         uint64_t time_us;
         std::string test_name = "gestures-large-f32";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_gestures_large_f32, trained_tflite_gestures_large_f32_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_gestures_large_f32, trained_onnx_gestures_large_f32_len, trained_onnx_gestures_large_f32_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -259,7 +194,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "gestures-large-i8";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_gestures_large_i8, trained_tflite_gestures_large_i8_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_gestures_large_i8, trained_onnx_gestures_large_i8_len, trained_onnx_gestures_large_i8_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -278,7 +213,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "image-32-32-mobilenet-f32";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_image_32_32_f32, trained_tflite_image_32_32_f32_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_image_32_32_f32, trained_onnx_image_32_32_f32_len, trained_onnx_image_32_32_f32_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -298,7 +233,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "image-32-32-mobilenet-i8";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_image_32_32_i8, trained_tflite_image_32_32_i8_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_image_32_32_i8, trained_onnx_image_32_32_i8_len, trained_onnx_image_32_32_i8_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -318,7 +253,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "image-96-96-mobilenet-f32";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_image_96_96_f32, trained_tflite_image_96_96_f32_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_image_96_96_f32, trained_onnx_image_96_96_f32_len, trained_onnx_image_96_96_f32_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -338,7 +273,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "image-96-96-mobilenet-i8";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_image_96_96_i8, trained_tflite_image_96_96_i8_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_image_96_96_i8, trained_onnx_image_96_96_i8_len, trained_onnx_image_96_96_i8_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -358,7 +293,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "image-320-320-mobilenet-ssd-f32";
         int iterations = it_count_ssd;
-        int x = run_model_tflite_full(trained_tflite_image_320_320_ssd_f32, trained_tflite_image_320_320_ssd_f32_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_image_320_320_ssd_f32, trained_onnx_image_320_320_ssd_f32_len, trained_onnx_image_320_320_ssd_f32_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -378,7 +313,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "keywords-2d-f32";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_keywords_f32, trained_tflite_keywords_f32_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_keywords_f32, trained_onnx_keywords_f32_len, trained_onnx_keywords_f32_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
@@ -398,7 +333,7 @@ int main(int argc, char **argv) {
         uint64_t time_us;
         std::string test_name = "keywords-2d-i8";
         int iterations = it_count;
-        int x = run_model_tflite_full(trained_tflite_keywords_i8, trained_tflite_keywords_i8_len, iterations, &time_us);
+        int x = run_model_tensorrt(trained_onnx_keywords_i8, trained_onnx_keywords_i8_len, trained_onnx_keywords_i8_hash, iterations, &time_us);
         if (x != 0) {
             ei_printf("ERR: Failed to run test (%d)\n", x);
             return 1;
