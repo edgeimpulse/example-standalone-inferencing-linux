@@ -89,7 +89,7 @@ $ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
 
 **AARCH64 Linux targets**
 
-> e.g. NVIDIA Jetson Nano, Renesas RZ/V2L
+> e.g. NVIDIA Jetson Orin Series, NVIDIA Jetson, Renesas RZ/V2L, Texas Instruments TDA4VM
 
 > See the [AARCH64 with AI Acceleration](#aarch64-with-ai-acceleration) section below for information on enabling hardware (AI) acceleration for your AARCH64 Linux target.
 
