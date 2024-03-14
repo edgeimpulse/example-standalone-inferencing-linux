@@ -416,18 +416,19 @@ int main(int argc, char **argv) {
     #if MFCC
     {
         const ei_dsp_config_mfcc_t config = {
-            2,
-            1,
-            13,
-            0.02f,
-            0.01f,
-            32,
-            256,
-            101,
-            300,
-            0,
-            0.98f,
-            1
+            2, // uint32_t blockId
+            1, // int implementationVersion
+            1, // int length of axes
+            13, // int num_cepstral
+            0.02f, // float frame_length
+            0.01f, // float frame_stride
+            32, // int num_filters
+            256, // int fft_length
+            101, // int win_size
+            300, // int low_frequency
+            0, // int high_frequency
+            0.98f, // float pre_cof
+            1 // int pre_shift
         };
         const float frequency = 16000.0f;
 
