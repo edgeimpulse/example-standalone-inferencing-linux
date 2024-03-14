@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_max_f32.c
  * Description:  Maximum value of a floating-point vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
  * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -165,7 +167,7 @@ void arm_max_f32(
   uint32x4_t countV;
   uint32x2_t countV2;
 
-  maxIdx = vdupq_n_u32(ULONG_MAX);
+  maxIdx = vdupq_n_u32(UINT_MAX);
   delta = vdupq_n_u32(4);
   index = vld1q_u32(indexInit);
   countV = vld1q_u32(countVInit);
@@ -363,3 +365,5 @@ void arm_max_f32(
 /**
   @} end of Max group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

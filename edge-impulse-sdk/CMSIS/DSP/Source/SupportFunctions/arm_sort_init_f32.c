@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_sort_init_f32.c
  * Description:  Floating point sort initialization function
  *
- * $Date:        2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
  * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -52,3 +54,5 @@ void arm_sort_init_f32(arm_sort_instance_f32 * S, arm_sort_alg alg, arm_sort_dir
 /**
   @} end of Sorting group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

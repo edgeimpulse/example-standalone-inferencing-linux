@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_trans_f64.c
  * Description:  Floating-point matrix transpose
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -32,14 +34,7 @@
   @ingroup groupMatrix
  */
 
-/**
-  @defgroup MatrixTrans Matrix Transpose
 
-  Tranposes a matrix.
-
-  Transposing an <code>M x N</code> matrix flips it around the center diagonal and results in an <code>N x M</code> matrix.
-  \image html MatrixTranspose.gif "Transpose of a 3 x 3 matrix"
- */
 
 /**
   @addtogroup MatrixTrans
@@ -153,3 +148,5 @@ arm_status arm_mat_trans_f64(
 /**
  * @} end of MatrixTrans group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

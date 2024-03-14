@@ -1,14 +1,18 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_correlation_distance_f32.c
  * Description:  Correlation distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -80,3 +84,5 @@ float32_t arm_correlation_distance_f32(float32_t *pA,float32_t *pB, uint32_t blo
 /**
  * @} end of Correlation group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

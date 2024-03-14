@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mean_f16.c
  * Description:  Mean value of a floating-point vector
  *
- * $Date:        18. March 2020
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -85,7 +87,7 @@ void arm_mean_f16(
     }
     while (blkCnt > 0);
 
-    *pResult = vecAddAcrossF16Mve(sumVec) / (float16_t) blockSize;
+    *pResult = (_Float16)vecAddAcrossF16Mve(sumVec) / (_Float16) blockSize;
 }
 
 
@@ -107,13 +109,13 @@ void arm_mean_f16(
   while (blkCnt > 0U)
   {
     /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
-    sum += *pSrc++;
+    sum += (_Float16)*pSrc++;
 
-    sum += *pSrc++;
+    sum += (_Float16)*pSrc++;
 
-    sum += *pSrc++;
+    sum += (_Float16)*pSrc++;
 
-    sum += *pSrc++;
+    sum += (_Float16)*pSrc++;
 
     /* Decrement the loop counter */
     blkCnt--;
@@ -132,7 +134,7 @@ void arm_mean_f16(
   while (blkCnt > 0U)
   {
     /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) */
-    sum += *pSrc++;
+    sum += (_Float16)*pSrc++;
 
     /* Decrement loop counter */
     blkCnt--;
@@ -140,7 +142,7 @@ void arm_mean_f16(
 
   /* C = (A[0] + A[1] + A[2] + ... + A[blockSize-1]) / blockSize  */
   /* Store result to destination */
-  *pResult = (sum / (float16_t)blockSize);
+  *pResult = ((_Float16)sum / (_Float16)blockSize);
 }
 #endif /* defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE) */
 
@@ -150,3 +152,5 @@ void arm_mean_f16(
 
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */ 
 
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

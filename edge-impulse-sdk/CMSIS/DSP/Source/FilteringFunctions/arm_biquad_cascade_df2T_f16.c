@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_biquad_cascade_df2T_f16.c
  * Description:  Processing function for floating-point transposed direct form II Biquad cascade filter
  *
- * $Date:        18. March 2020
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -47,7 +49,7 @@
   @return        none
  */
 
-#if defined(ARM_MATH_MVE_FLOAT16) && !defined(ARM_MATH_AUTOVECTORIZE)
+#if (defined(ARM_MATH_MVE_FLOAT16) && defined(ARM_MATH_HELIUM_EXPERIMENTAL)) && !defined(ARM_MATH_AUTOVECTORIZE)
 void arm_biquad_cascade_df2T_f16(
   const arm_biquad_cascade_df2T_instance_f16 * S,
   const float16_t * pSrc,
@@ -186,7 +188,7 @@ void arm_biquad_cascade_df2T_f16(
     while (stage > 0U);
 }
 #else
-LOW_OPTIMIZATION_ENTER
+
 void arm_biquad_cascade_df2T_f16(
   const arm_biquad_cascade_df2T_instance_f16 * S,
   const float16_t * pSrc,
@@ -486,10 +488,11 @@ void arm_biquad_cascade_df2T_f16(
    } while (stage > 0U);
 
 }
-LOW_OPTIMIZATION_EXIT
 #endif /* #if defined(ARM_MATH_MVEF) && !defined(ARM_MATH_AUTOVECTORIZE) */
 /**
   @} end of BiquadCascadeDF2T group
  */
 
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

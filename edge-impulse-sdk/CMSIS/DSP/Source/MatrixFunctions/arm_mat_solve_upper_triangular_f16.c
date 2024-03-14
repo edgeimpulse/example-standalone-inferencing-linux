@@ -1,13 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_solve_upper_triangular_f16.c
  * Description:  Solve linear system UT X = A with UT upper triangular matrix
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -64,7 +68,6 @@ arm_status status;                             /* status of matrix inverse */
 
   /* Check for matrix mismatch condition */
   if ((ut->numRows != ut->numCols) ||
-      (a->numRows != a->numCols) ||
       (ut->numRows != a->numRows)   )
   {
     /* Set status as ARM_MATH_SIZE_MISMATCH */
@@ -76,9 +79,10 @@ arm_status status;                             /* status of matrix inverse */
 
   {
 
-    int i,j,k,n;
+    int i,j,k,n,cols;
 
     n = dst->numRows;
+    cols = dst->numCols;
 
     float16_t *pX = dst->pData;
     float16_t *pUT = ut->pData;
@@ -94,17 +98,17 @@ arm_status status;                             /* status of matrix inverse */
     
     for(i=n-1; i >= 0 ; i--)
     {
-      for(j=0; j+7 < n; j +=8)
+      for(j=0; j+7 < cols; j +=8)
       {
-            vecA = vld1q_f16(&pA[i * n + j]);
+            vecA = vld1q_f16(&pA[i * cols + j]);
             
             for(k=n-1; k > i; k--)
             {
-                vecX = vld1q_f16(&pX[n*k+j]);          
+                vecX = vld1q_f16(&pX[cols*k+j]);          
                 vecA = vfmsq(vecA,vdupq_n_f16(pUT[n*i + k]),vecX);
             }
 
-            if (pUT[n*i + i]==0.0f16)
+            if ((_Float16)pUT[n*i + i]==0.0f16)
             {
               return(ARM_MATH_SINGULAR);
             }
@@ -113,28 +117,28 @@ arm_status status;                             /* status of matrix inverse */
             vecA = vmulq(vecA,vdupq_n_f16(invUT));
            
 
-            vst1q(&pX[i*n+j],vecA);
+            vst1q(&pX[i*cols+j],vecA);
       }
 
-      for(; j < n; j ++)
+      for(; j < cols; j ++)
       {
             a_col = &pA[j];
 
             ut_row = &pUT[n*i];
 
-            _Float16 tmp=a_col[i * n];
+            _Float16 tmp=a_col[i * cols];
             
             for(k=n-1; k > i; k--)
             {
-                tmp -= (_Float16)ut_row[k] * (_Float16)pX[n*k+j];
+                tmp -= (_Float16)ut_row[k] * (_Float16)pX[cols*k+j];
             }
 
-            if (ut_row[i]==0.0f16)
+            if ((_Float16)ut_row[i]==0.0f16)
             {
               return(ARM_MATH_SINGULAR);
             }
             tmp = tmp / (_Float16)ut_row[i];
-            pX[i*n+j] = tmp;
+            pX[i*cols+j] = tmp;
        }
 
     }
@@ -160,7 +164,6 @@ arm_status status;                             /* status of matrix inverse */
 
   /* Check for matrix mismatch condition */
   if ((ut->numRows != ut->numCols) ||
-      (a->numRows != a->numCols) ||
       (ut->numRows != a->numRows)   )
   {
     /* Set status as ARM_MATH_SIZE_MISMATCH */
@@ -172,9 +175,10 @@ arm_status status;                             /* status of matrix inverse */
 
   {
 
-    int i,j,k,n;
+    int i,j,k,n,cols;
 
     n = dst->numRows;
+    cols = dst->numCols;
 
     float16_t *pX = dst->pData;
     float16_t *pUT = ut->pData;
@@ -183,7 +187,7 @@ arm_status status;                             /* status of matrix inverse */
     float16_t *ut_row;
     float16_t *a_col;
 
-    for(j=0; j < n; j ++)
+    for(j=0; j < cols; j ++)
     {
        a_col = &pA[j];
 
@@ -191,19 +195,19 @@ arm_status status;                             /* status of matrix inverse */
        {
             ut_row = &pUT[n*i];
 
-            float16_t tmp=a_col[i * n];
+            float16_t tmp=a_col[i * cols];
             
             for(k=n-1; k > i; k--)
             {
-                tmp -= ut_row[k] * pX[n*k+j];
+                tmp -= (_Float16)ut_row[k] * (_Float16)pX[cols*k+j];
             }
 
-            if (ut_row[i]==0.0f)
+            if ((_Float16)ut_row[i]==0.0f16)
             {
               return(ARM_MATH_SINGULAR);
             }
-            tmp = tmp / ut_row[i];
-            pX[i*n+j] = tmp;
+            tmp = (_Float16)tmp / (_Float16)ut_row[i];
+            pX[i*cols+j] = tmp;
        }
 
     }
@@ -222,3 +226,5 @@ arm_status status;                             /* status of matrix inverse */
   @} end of MatrixInv group
  */
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */ 
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_q7_to_q15.c
  * Description:  Converts the elements of the Q7 vector to Q15 vector
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -121,7 +123,7 @@ void arm_q7_to_q15(
     /* Convert from q7 to q15 and store result in destination buffer */
 #if defined (ARM_MATH_DSP)
 
-    in = read_q7x4_ia ((q7_t **) &pIn);
+    in = read_q7x4_ia (&pIn);
 
     /* rotatate in by 8 and extend two q7_t values to q15_t values */
     in1 = __SXTB16(__ROR(in, 8));
@@ -186,3 +188,5 @@ void arm_q7_to_q15(
 /**
   @} end of q7_to_x group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_fir_lattice_f32.c
  * Description:  Processing function for floating-point FIR Lattice filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -35,6 +37,9 @@
 /**
   @defgroup FIR_Lattice Finite Impulse Response (FIR) Lattice Filters
 
+  @deprecated Those functions are no more tested nor maintained and will be removed in
+              a future version.
+              
   This set of functions implements Finite Impulse Response (FIR) lattice filters
   for Q15, Q31 and floating-point data types.  Lattice filters are used in a
   variety of adaptive filter applications. The filter structure is feedforward and
@@ -451,3 +456,5 @@ void arm_fir_lattice_f32(
 /**
   @} end of FIR_Lattice group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

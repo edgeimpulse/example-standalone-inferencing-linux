@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_sub_q7.c
  * Description:  Q7 vector subtraction
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -117,7 +119,7 @@ void arm_sub_q7(
 
 #if defined (ARM_MATH_DSP)
     /* Subtract and store result in destination buffer (4 samples at a time). */
-    write_q7x4_ia (&pDst, __QSUB8(read_q7x4_ia ((q7_t **) &pSrcA), read_q7x4_ia ((q7_t **) &pSrcB)));
+    write_q7x4_ia (&pDst, __QSUB8(read_q7x4_ia (&pSrcA), read_q7x4_ia (&pSrcB)));
 #else
     *pDst++ = (q7_t) __SSAT((q15_t) *pSrcA++ - *pSrcB++, 8);
     *pDst++ = (q7_t) __SSAT((q15_t) *pSrcA++ - *pSrcB++, 8);
@@ -156,3 +158,5 @@ void arm_sub_q7(
 /**
   @} end of BasicSub group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

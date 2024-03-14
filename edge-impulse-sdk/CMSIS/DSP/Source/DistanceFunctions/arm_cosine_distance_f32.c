@@ -1,14 +1,18 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_cosine_distance_f32.c
  * Description:  Cosine distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -45,6 +49,8 @@
  * @param[in]    blockSize  vector length
  * @return distance
  *
+ * @par           Description
+ *                  cosine_distance(u,v) is 1 - u . v / (Norm(u) Norm(v))
  */
 
 float32_t arm_cosine_distance_f32(const float32_t *pA,const float32_t *pB, uint32_t blockSize)
@@ -66,3 +72,5 @@ float32_t arm_cosine_distance_f32(const float32_t *pA,const float32_t *pB, uint3
 /**
  * @} end of CosineDist group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

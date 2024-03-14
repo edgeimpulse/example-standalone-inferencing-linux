@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_biquad_cascade_df1_q31.c
  * Description:  Processing function for the Q31 Biquad cascade filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -69,7 +71,7 @@ void arm_biquad_cascade_df1_q31(
     uint32_t        stages = S->numStages;      /*  loop counters                 */
     int             postShift = S->postShift;
     q31x4_t         b0Coeffs, b1Coeffs, a0Coeffs, a1Coeffs;     /*  Coefficients vector           */
-    q31x4_t         stateVec;
+    q31x4_t         stateVec = { 0 };
     q31_t          *pState = S->pState; /*  pState pointer initialization */
     q31x4_t         inVec0;
     int64_t         acc;
@@ -508,3 +510,5 @@ void arm_biquad_cascade_df1_q31(
 /**
   @} end of BiquadCascadeDF1 group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

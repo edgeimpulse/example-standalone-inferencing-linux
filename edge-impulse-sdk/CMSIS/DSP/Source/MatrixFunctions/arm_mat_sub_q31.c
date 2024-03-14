@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_sub_q31.c
  * Description:  Q31 matrix subtraction
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -58,7 +60,7 @@ arm_status arm_mat_sub_q31(
 {
     uint32_t        numSamples;       /* total number of elements in the matrix  */
     q31_t          *pDataA, *pDataB, *pDataDst;
-    q31x4_t       vecA, vecB, vecDst;
+    q31x4_t       vecA, vecB, vecDst = { 0 };
     q31_t const   *pSrcAVec;
     q31_t const   *pSrcBVec;
     uint32_t        blkCnt;           /* loop counters */
@@ -216,3 +218,5 @@ arm_status arm_mat_sub_q31(
 /**
   @} end of MatrixSub group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

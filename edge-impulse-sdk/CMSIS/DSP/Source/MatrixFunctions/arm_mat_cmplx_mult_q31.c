@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_cmplx_mult_q31.c
  * Description:  Floating-point matrix multiplication
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -526,7 +528,7 @@ arm_status arm_mat_cmplx_mult_q31(
     uint16_t  numRowsA = pSrcA->numRows;    /* number of rows of input matrix A    */
     uint16_t  numColsB = pSrcB->numCols;    /* number of columns of input matrix B */
     uint16_t  numColsA = pSrcA->numCols;    /* number of columns of input matrix A */
-    uint16_t  col, i = 0U, row = numRowsA, colCnt;  /* loop counters */
+    uint16_t  col, i = 0U, row = numRowsA;  /* loop counters */
     arm_status status;          /* status of matrix multiplication */
     uint32x4_t vecOffs, vecColBOffs;
     uint32_t  blkCnt, rowCnt;           /* loop counters */
@@ -611,7 +613,6 @@ arm_status arm_mat_cmplx_mult_q31(
             /*
              * Matrix A columns number of MAC operations are to be performed
              */
-            colCnt = numColsA;
 
             q31_t const *pSrcA0Vec, *pSrcA1Vec;
             q31_t const *pInA0 = pInA;
@@ -742,7 +743,6 @@ arm_status arm_mat_cmplx_mult_q31(
             /*
              * Matrix A columns number of MAC operations are to be performed
              */
-            colCnt = numColsA;
 
             q31_t const *pSrcA0Vec;
             q31_t const *pInA0 = pInA;
@@ -1061,3 +1061,5 @@ arm_status arm_mat_cmplx_mult_q31(
 /**
   @} end of MatrixMult group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

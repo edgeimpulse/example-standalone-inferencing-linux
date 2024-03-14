@@ -1,14 +1,18 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_cosine_distance_f16.c
  * Description:  Cosine distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -58,6 +62,8 @@
  * @param[in]    blockSize  vector length
  * @return distance
  *
+ * @par           Description
+ *                  cosine_distance(u,v) is 1 - u . v / (Norm(u) Norm(v))
  */
 
 float16_t arm_cosine_distance_f16(const float16_t *pA,const float16_t *pB, uint32_t blockSize)
@@ -69,8 +75,8 @@ float16_t arm_cosine_distance_f16(const float16_t *pA,const float16_t *pB, uint3
 
     arm_dot_prod_f16(pA,pB,blockSize,&dot);
 
-    arm_sqrt_f16(pwra * pwrb, &tmp);
-    return(1.0f - dot / tmp);
+    arm_sqrt_f16((_Float16)pwra * (_Float16)pwrb, &tmp);
+    return(1.0f16 - (_Float16)dot / (_Float16)tmp);
 
 }
 
@@ -82,3 +88,5 @@ float16_t arm_cosine_distance_f16(const float16_t *pA,const float16_t *pB, uint3
 
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */ 
 
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

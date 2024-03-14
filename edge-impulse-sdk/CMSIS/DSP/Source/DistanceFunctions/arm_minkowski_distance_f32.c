@@ -1,14 +1,18 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_minkowski_distance_f32.c
  * Description:  Minkowski distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -74,10 +78,9 @@ __attribute__((weak)) float __powisf2(float a, int b)
 float32_t arm_minkowski_distance_f32(const float32_t *pA,const float32_t *pB, int32_t order, uint32_t blockSize)
 {
     uint32_t        blkCnt;
-    f32x4_t         a, b, tmpV, accumV, sumV;
+    f32x4_t         a, b, tmpV, sumV;
 
     sumV = vdupq_n_f32(0.0f);
-    accumV = vdupq_n_f32(0.0f);
 
     blkCnt = blockSize >> 2;
     while (blkCnt > 0U) {
@@ -185,3 +188,5 @@ float32_t arm_minkowski_distance_f32(const float32_t *pA,const float32_t *pB, in
 /**
  * @} end of Minkowski group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

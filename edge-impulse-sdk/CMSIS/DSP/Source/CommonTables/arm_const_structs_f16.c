@@ -1,16 +1,18 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_const_structs_f16.c
  * Description:  Constant structs that are initialized for user convenience.
  *               For example, some can be given as arguments to the arm_cfft_f32() or arm_rfft_f32() functions.
  *
- * $Date:        27. January 2017
- * $Revision:    V.1.5.1
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2017 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -118,3 +120,5 @@ const arm_cfft_instance_f16 arm_cfft_sR_f16_len4096 = {
 #endif
 
 #endif
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

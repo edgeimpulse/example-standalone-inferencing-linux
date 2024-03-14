@@ -1,10 +1,14 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_quaternion_conjugate_f32.c
  * Description:  Floating-point quaternion conjugate
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
  * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
@@ -79,7 +83,8 @@ void arm_quaternion_conjugate_f32(const float32_t *pInputQuaternions,
     float32_t *pConjugateQuaternions, 
     uint32_t nbQuaternions)
 {
-   for(uint32_t i=0; i < nbQuaternions; i++)
+   uint32_t i;
+   for(i=0; i < nbQuaternions; i++)
    {
 
       pConjugateQuaternions[4 * i + 0] = pInputQuaternions[4 * i + 0];
@@ -93,3 +98,5 @@ void arm_quaternion_conjugate_f32(const float32_t *pInputQuaternions,
 /**
   @} end of QuatConjugate group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

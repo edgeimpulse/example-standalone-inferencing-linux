@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_biquad_cascade_df1_fast_q15.c
  * Description:  Fast processing function for the Q15 Biquad cascade filter
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -79,13 +81,13 @@ void arm_biquad_cascade_df1_fast_q15(
   do
   {
     /* Read the b0 and 0 coefficients using SIMD  */
-    b0 = read_q15x2_ia ((q15_t **) &pCoeffs);
+    b0 = read_q15x2_ia (&pCoeffs);
 
     /* Read the b1 and b2 coefficients using SIMD */
-    b1 = read_q15x2_ia ((q15_t **) &pCoeffs);
+    b1 = read_q15x2_ia (&pCoeffs);
 
     /* Read the a1 and a2 coefficients using SIMD */
-    a1 = read_q15x2_ia ((q15_t **) &pCoeffs);
+    a1 = read_q15x2_ia (&pCoeffs);
 
     /* Read the input state values from the state buffer:  x[n-1], x[n-2] */
     state_in = read_q15x2_ia (&pState);
@@ -109,7 +111,7 @@ void arm_biquad_cascade_df1_fast_q15(
     {
 
       /* Read the input */
-      in = read_q15x2_ia ((q15_t **) &pIn);
+      in = read_q15x2_ia (&pIn);
 
       /* out =  b0 * x[n] + 0 * 0 */
       out = __SMUAD(b0, in);
@@ -248,3 +250,5 @@ void arm_biquad_cascade_df1_fast_q15(
 /**
   @} end of BiquadCascadeDF1 group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

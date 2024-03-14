@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_mat_scale_f16.c
  * Description:  Multiplies a floating-point matrix by a scalar
  *
- * $Date:        18. March 2020
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -161,10 +163,10 @@ arm_status arm_mat_scale_f16(
       /* C(m,n) = A(m,n) * scale */
 
       /* Scale and store result in destination buffer. */
-      *pOut++ = (*pIn++) * scale;
-      *pOut++ = (*pIn++) * scale;
-      *pOut++ = (*pIn++) * scale;
-      *pOut++ = (*pIn++) * scale;
+      *pOut++ = (_Float16)(*pIn++) * (_Float16)scale;
+      *pOut++ = (_Float16)(*pIn++) * (_Float16)scale;
+      *pOut++ = (_Float16)(*pIn++) * (_Float16)scale;
+      *pOut++ = (_Float16)(*pIn++) * (_Float16)scale;
 
       /* Decrement loop counter */
       blkCnt--;
@@ -185,7 +187,7 @@ arm_status arm_mat_scale_f16(
       /* C(m,n) = A(m,n) * scale */
 
       /* Scale and store result in destination buffer. */
-      *pOut++ = (*pIn++) * scale;
+      *pOut++ = (_Float16)(*pIn++) * (_Float16)scale;
 
       /* Decrement loop counter */
       blkCnt--;
@@ -206,3 +208,5 @@ arm_status arm_mat_scale_f16(
 
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */ 
 
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

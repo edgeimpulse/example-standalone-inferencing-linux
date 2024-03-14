@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_fir_interpolate_f32.c
  * Description:  Floating-point FIR interpolation sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -147,7 +149,7 @@ static void arm_fir_interpolate2_f32_mve(
     uint32_t  blkCnt;           /* Loop counters */
     uint16_t  phaseLen = S->phaseLength;    /* Length of each polyphase filter component */
     uint32_t  strides[4] = { 0, 1 * 2, 2 * 2, 3 * 2 };
-    uint32x4_t vec_strides0 = *(uint32x4_t *) strides;
+    uint32x4_t vec_strides0 = vld1q_u32(strides);
     uint32x4_t vec_strides1 = vec_strides0 + 1;
     f32x4_t acc0, acc1;
 
@@ -271,8 +273,8 @@ void arm_fir_interpolate_f32(
     uint16_t  phaseLen = S->phaseLength;    /* Length of each polyphase filter component */
     uint32_t  strides[4] = { 0, 1 * S->L, 2 * S->L, 3 * S->L };
     uint32_t  stridesM[4] = { 4, 3, 2, 1 };
-    uint32x4_t vec_stridesM = *(uint32x4_t *) stridesM;
-    uint32x4_t vec_strides = *(uint32x4_t *) strides;
+    uint32x4_t vec_stridesM =  vld1q_u32(stridesM);
+    uint32x4_t vec_strides =  vld1q_u32(strides);
     f32x4_t acc;
 
 
@@ -1250,3 +1252,5 @@ void arm_fir_interpolate_f32(
 /**
   @} end of FIR_Interpolate group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

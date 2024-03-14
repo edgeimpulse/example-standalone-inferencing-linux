@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_float_to_q15.c
  * Description:  Converts the elements of the floating-point vector to Q15 vector
  *
- * $Date:        18. March 2020
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -136,7 +138,7 @@ void arm_f16_to_q15(
         /*
          * convert from float to Q31 and then store the results in the destination buffer
          */
-        *pDst++ = clip_q31_to_q15((q31_t) (*pIn++ * 32768.0));
+        *pDst++ = clip_q31_to_q15((q31_t) ((_Float16)*pIn++ * 32768.0f16));
 
 #endif                          /*      #ifdef ARM_MATH_ROUNDING        */
 
@@ -155,3 +157,5 @@ void arm_f16_to_q15(
 
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */ 
 
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

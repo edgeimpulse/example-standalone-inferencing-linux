@@ -1,14 +1,18 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_chebyshev_distance_f16.c
  * Description:  Chebyshev distance between two vectors
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -115,7 +119,7 @@ float16_t arm_chebyshev_distance_f16(const float16_t *pA,const float16_t *pB, ui
 
    tmpA = *pA++;
    tmpB = *pB++;
-   diff = fabsf(tmpA - tmpB);
+   diff = (_Float16)fabsf((float32_t)((_Float16)tmpA - (_Float16)tmpB));
    maxVal = diff;
    blockSize--;
 
@@ -123,8 +127,8 @@ float16_t arm_chebyshev_distance_f16(const float16_t *pA,const float16_t *pB, ui
    {
       tmpA = *pA++;
       tmpB = *pB++;
-      diff = fabsf(tmpA - tmpB);
-      if (diff > maxVal)
+      diff = (_Float16)fabsf((float32_t)((_Float16)tmpA - (_Float16)tmpB));
+      if ((_Float16)diff > (_Float16)maxVal)
       {
         maxVal = diff;
       }
@@ -142,3 +146,5 @@ float16_t arm_chebyshev_distance_f16(const float16_t *pA,const float16_t *pB, ui
 
 #endif /* #if defined(ARM_FLOAT16_SUPPORTED) */ 
 
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

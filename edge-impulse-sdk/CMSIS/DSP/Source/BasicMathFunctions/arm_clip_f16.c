@@ -1,10 +1,14 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_clip_f16.c
  * Description:  Floating-point vector addition
  *
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
  * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
@@ -121,9 +125,9 @@ void arm_clip_f16(const float16_t * pSrc,
 {
     for (uint32_t i = 0; i < numSamples; i++)
     {                                        
-        if (pSrc[i] > high)                  
+        if ((_Float16)pSrc[i] > (_Float16)high)                  
             pDst[i] = high;                  
-        else if (pSrc[i] < low)              
+        else if ((_Float16)pSrc[i] < (_Float16)low)              
             pDst[i] = low;                   
         else                                 
             pDst[i] = pSrc[i];               
@@ -137,3 +141,5 @@ void arm_clip_f16(const float16_t * pSrc,
 /**
   @} end of BasicClip group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

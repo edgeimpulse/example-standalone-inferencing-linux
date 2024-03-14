@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_scale_q15.c
  * Description:  Multiplies a Q15 vector by a scalar
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -136,8 +138,8 @@ void arm_scale_q15(
 
 #if defined (ARM_MATH_DSP)
     /* read 2 times 2 samples at a time from source */
-    inA1 = read_q15x2_ia ((q15_t **) &pSrc);
-    inA2 = read_q15x2_ia ((q15_t **) &pSrc);
+    inA1 = read_q15x2_ia (&pSrc);
+    inA2 = read_q15x2_ia (&pSrc);
 
     /* Scale inputs and store result in temporary variables
      * in single cycle by packing the outputs */
@@ -199,3 +201,5 @@ void arm_scale_q15(
 /**
   @} end of BasicScale group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

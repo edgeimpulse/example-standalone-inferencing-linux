@@ -1,23 +1,18 @@
-/* Edge Impulse inferencing library
- * Copyright (c) 2021 EdgeImpulse Inc.
+/*
+ * Copyright (c) 2022 EdgeImpulse Inc.
  *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS
+ * IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
  *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef _EI_CLASSIFIER_PORTING_H_
@@ -25,31 +20,11 @@
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "edge-impulse-sdk/tensorflow/lite/micro/debug_log.h"
+#include "edge-impulse-sdk/dsp/returntypes.h"
 
 #if defined(__cplusplus) && EI_C_LINKAGE == 1
 extern "C" {
 #endif // defined(__cplusplus)
-
-typedef enum {
-    EI_IMPULSE_OK = 0,
-    EI_IMPULSE_ERROR_SHAPES_DONT_MATCH = -1,
-    EI_IMPULSE_CANCELED = -2,
-    EI_IMPULSE_TFLITE_ERROR = -3,
-    EI_IMPULSE_DSP_ERROR = -5,
-    EI_IMPULSE_TFLITE_ARENA_ALLOC_FAILED = -6,
-    EI_IMPULSE_CUBEAI_ERROR = -7,
-    EI_IMPULSE_ALLOC_FAILED = -8,
-    EI_IMPULSE_ONLY_SUPPORTED_FOR_IMAGES = -9,
-    EI_IMPULSE_UNSUPPORTED_INFERENCING_ENGINE = -10,
-    EI_IMPULSE_OUT_OF_MEMORY = -11,
-    EI_IMPULSE_NOT_SUPPORTED_WITH_I16 = -12,
-    EI_IMPULSE_INPUT_TENSOR_WAS_NULL = -13,
-    EI_IMPULSE_OUTPUT_TENSOR_WAS_NULL = -14,
-    EI_IMPULSE_SCORE_TENSOR_WAS_NULL = -15,
-    EI_IMPULSE_LABEL_TENSOR_WAS_NULL = -16,
-    EI_IMPULSE_TENSORRT_INIT_FAILED = -17
-} EI_IMPULSE_ERROR;
 
 /**
  * Cancelable sleep, can be triggered with signal from other thread
@@ -85,6 +60,12 @@ void ei_serial_set_baudrate(int baudrate);
 void ei_putchar(char c);
 
 /**
+ * @brief       Connect to getchar of target
+ * @return      character from serial
+*/
+char ei_getchar(void);
+
+/**
  * Print wrapper around printf()
  * This is used internally to print debug information.
  */
@@ -117,6 +98,16 @@ void ei_free(void *ptr);
 #endif // defined(__cplusplus) && EI_C_LINKAGE == 1
 
 // Load porting layer depending on target
+
+// First check if any of the general frameworks or operating systems are supported/enabled
+#ifndef EI_PORTING_ZEPHYR
+#if defined(__ZEPHYR__)
+#define EI_PORTING_ZEPHYR      1
+#else
+#define EI_PORTING_ZEPHYR      0
+#endif
+#endif
+
 #ifndef EI_PORTING_ARDUINO
 #ifdef ARDUINO
 #define EI_PORTING_ARDUINO      1
@@ -125,19 +116,26 @@ void ei_free(void *ptr);
 #endif
 #endif
 
-#ifndef EI_PORTING_ECM3532
-#ifdef ECM3532
-#define EI_PORTING_ECM3532      1
-#else
-#define EI_PORTING_ECM3532      0
-#endif
-#endif
-
 #ifndef EI_PORTING_MBED
 #ifdef __MBED__
 #define EI_PORTING_MBED      1
 #else
 #define EI_PORTING_MBED      0
+#endif
+#endif
+
+// Then check for target spcific build systems
+
+#ifndef EI_PORTING_ESPRESSIF
+#if ((defined(CONFIG_IDF_TARGET_ESP32) || defined(CONFIG_IDF_TARGET_ESP32S3)) && EI_PORTING_ZEPHYR == 0)
+#include "esp_idf_version.h"
+#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+#define portTICK_RATE_MS portTICK_PERIOD_MS
+#endif
+#define EI_PORTING_ESPRESSIF      1
+#define EI_PORTING_ARDUINO        0
+#else
+#define EI_PORTING_ESPRESSIF     0
 #endif
 #endif
 
@@ -157,13 +155,14 @@ void ei_free(void *ptr);
 #endif
 #endif
 
-#ifndef EI_PORTING_ZEPHYR
-#if defined(__ZEPHYR__)
-#define EI_PORTING_ZEPHYR      1
+#ifndef EI_PORTING_RASPBERRY
+#ifdef PICO_BOARD
+#define EI_PORTING_RASPBERRY      1
 #else
-#define EI_PORTING_ZEPHYR      0
+#define EI_PORTING_RASPBERRY      0
 #endif
 #endif
+
 
 #ifndef EI_PORTING_STM32_CUBEAI
 #if defined(USE_HAL_DRIVER) && !defined(__MBED__) && EI_PORTING_ZEPHYR == 0
@@ -189,5 +188,24 @@ void ei_free(void *ptr);
 #endif
 #endif
 // End load porting layer depending on target
+
+// Additional configuration for specific architecture
+#if defined(__CORTEX_M)
+
+#if (__CORTEX_M == 55U)
+#define EI_MAX_OVERFLOW_BUFFER_COUNT	15
+#endif
+
+#if (__CORTEX_M == 85U)
+#define EI_MAX_OVERFLOW_BUFFER_COUNT	50
+#endif
+
+#endif
+
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+#define EI_MAX_OVERFLOW_BUFFER_COUNT	30
+#endif
+
+// End additional configuration
 
 #endif // _EI_CLASSIFIER_PORTING_H_

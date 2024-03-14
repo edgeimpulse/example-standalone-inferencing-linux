@@ -1,15 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_correlate_q31.c
  * Description:  Correlation of Q31 sequences
  *
- * $Date:        18. March 2019
- * $Revision:    V1.6.0
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
  *
- * Target Processor: Cortex-M cores
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2019 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -858,7 +860,7 @@ void arm_correlate_q31(
       if (((i - j) < srcBLen) && (j < srcALen))
       {
         /* z[i] += x[i-j] * y[j] */
-        sum += ((q63_t) pIn1[j] * pIn2[-((int32_t) i - j)]);
+        sum += ((q63_t) pIn1[j] * pIn2[-((int32_t) i - (int32_t) j)]);
       }
     }
 
@@ -877,3 +879,5 @@ void arm_correlate_q31(
 /**
   @} end of Corr group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES

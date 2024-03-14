@@ -1,12 +1,17 @@
+#include "edge-impulse-sdk/dsp/config.hpp"
+#if EIDSP_LOAD_CMSIS_DSP_SOURCES
 /* ----------------------------------------------------------------------
  * Project:      CMSIS DSP Library
  * Title:        arm_cfft_radix2_init_f16.c
  * Description:  Radix-2 Decimation in Frequency Floating-point CFFT & CIFFT Initialization function
  *
- * Target Processor: Cortex-M cores
+ * $Date:        23 April 2021
+ * $Revision:    V1.9.0
+ *
+ * Target Processor: Cortex-M and Cortex-A cores
  * -------------------------------------------------------------------- */
 /*
- * Copyright (C) 2010-2020 ARM Limited or its affiliates. All rights reserved.
+ * Copyright (C) 2010-2021 ARM Limited or its affiliates. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -209,3 +214,5 @@ arm_status arm_cfft_radix2_init_f16(
 /**
   @} end of ComplexFFT group
  */
+
+#endif // EIDSP_LOAD_CMSIS_DSP_SOURCES
