@@ -144,7 +144,7 @@ else
 $(error Invalid TensorRT version - supported versions are 7 and 8.)
 endif # TENSORRT_VERSION
 TRT_LDFLAGS += -lcudart -lnvinfer -lnvonnxparser
-LDFLAGS += $(TRT_LDFLAGS) -Ltflite/linux-jetson-nano/ -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
+LDFLAGS += $(TRT_LDFLAGS) -lstdc++fs -Ltflite/linux-jetson-nano/ -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
 endif # TARGET_JETSON_COMMON
 
 ifeq (${APP_CUSTOM},1)
