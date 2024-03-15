@@ -47,6 +47,7 @@ inline bool file_exists(char *model_file_name)
 
 // You can toggle these on / off in case devices don't have enough flash to hold all of them in one go
 // just concat the output afterwards
+#define INPUT_OUTPUT_BUF_SIZE     (80 * 1024)     // Update this to grab as much RAM as possible on embedded systems
 #define GESTURES_F32           1
 #define GESTURES_I8            0
 #define MOBILENET_32_32_F32    1
@@ -126,7 +127,7 @@ int run_model_tensorrt(const unsigned char *trained_onnx, size_t trained_onnx_le
         }
     }
 
-    uint32_t out_data_size = 80 * 1024;
+    uint32_t out_data_size = INPUT_OUTPUT_BUF_SIZE;
 
     float *out_data = (float*)ei_malloc(out_data_size * sizeof(float));
     if (out_data == nullptr) {
@@ -138,7 +139,7 @@ int run_model_tensorrt(const unsigned char *trained_onnx, size_t trained_onnx_le
         ei_trt_handle = libeitrt::create_EiTrt(model_file_name, false);
     }
 
-    uint32_t in_data_size = 80 * 1024;
+    uint32_t in_data_size = INPUT_OUTPUT_BUF_SIZE;
     float *in_data = (float*)ei_malloc(in_data_size * sizeof(float));
     if (in_data == nullptr) {
         ei_printf("ERR: Cannot allocate memory for input data \n");
