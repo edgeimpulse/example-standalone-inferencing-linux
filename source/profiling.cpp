@@ -142,10 +142,10 @@ int run_model_tflite_full(const unsigned char *trained_tflite, size_t trained_tf
     EI_TFLITE_RESOLVER;
 
     tflite::MicroInterpreter *interpreter = new tflite::MicroInterpreter(
-        model, resolver, tensor_arena, EI_CLASSIFIER_TFLITE_ARENA_SIZE, error_reporter);
+        model, resolver, tensor_arena, EI_CLASSIFIER_TFLITE_ARENA_SIZE);
 
     // Allocate memory from the tensor_arena for the model's tensors.
-    TfLiteStatus allocate_status = interpreter->AllocateTensors();
+    TfLiteStatus allocate_status = interpreter->AllocateTensors(true);
     if (allocate_status != kTfLiteOk) {
         error_reporter->Report("AllocateTensors() failed");
         ei_aligned_free(tensor_arena);
