@@ -85,15 +85,13 @@ int main(int argc, char **argv) {
     numpy::signal_from_buffer(&raw_features[0], raw_features.size(), &signal);
 
     EI_IMPULSE_ERROR res = run_classifier(&signal, &result, false);
-    printf("run_classifier returned: %d (DSP %d ms., Classification %d ms., Anomaly %d ms.)\n", res,
-        result.timing.dsp, result.timing.classification, result.timing.anomaly);
-    if (res != 0) {
-        return 1;
-    }
-
-    printf("Begin output\n");
+    // print the predictions
+    printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
+    printf("#Object detection results:\n");
+    bool bb_found = result.bounding_boxes[0].value > 0;
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
         auto bb = result.bounding_boxes[ix];
         if (bb.value == 0) {
@@ -102,29 +100,44 @@ int main(int argc, char **argv) {
 
         printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
     }
-#else
-    // print the predictions
-    printf("[");
-    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-        printf("%.5f", result.classification[ix].value);
-#if EI_CLASSIFIER_HAS_ANOMALY
-        printf(", ");
-#else
-        if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
-            printf(", ");
-        }
-#endif
+
+    if (!bb_found) {
+        printf("    No objects found\n");
     }
-#if EI_CLASSIFIER_HAS_ANOMALY
-    printf("%.3f", result.anomaly);
+
+#elif (EI_CLASSIFIER_LABEL_COUNT == 1) && (!EI_CLASSIFIER_HAS_ANOMALY) // regression
+    printf("#Regression results:\n");
+    printf("    %s: ", result.classification[0].label);
+    printf("%.5f", result.classification[0].value);
+    printf("\n");
+
+#elif EI_CLASSIFIER_LABEL_COUNT > 1 // if there is only one label, this is an anomaly only
+    printf("#Classification results:\n");
+    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
+        printf("    %s: ", result.classification[ix].label);
+        printf("%.5f", result.classification[ix].value);
+        printf("\n");
+    }
 #endif
-    printf("]\n");
+#if EI_CLASSIFIER_HAS_ANOMALY == 3 // visual AD
+    printf("#Visual anomaly grid results:\n");
+    for (uint32_t i = 0; i < result.visual_ad_count; i++) {
+        ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
+        if (bb.value == 0) {
+            continue;
+        }
+
+        printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+    }
+    printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
+#elif (EI_CLASSIFIER_HAS_ANOMALY > 0) // except for visual AD
+    printf("Anomaly prediction: %.3f\n", result.anomaly);
 #endif
 
-    printf("End output\n");
+    // Add a debug.bmp file for object detection / visual AD results
+#if (EI_CLASSIFIER_OBJECT_DETECTION == 1) || (EI_CLASSIFIER_HAS_ANOMALY == 3)
 
-    // Add a debug.bmp file for object detection results
-#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+#if (EI_CLASSIFIER_OBJECT_DETECTION == 1)
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
         auto bb = result.bounding_boxes[ix];
         if (bb.value == 0) {
@@ -137,6 +150,22 @@ int main(int argc, char **argv) {
             }
         }
     }
+#endif
+
+#if (EI_CLASSIFIER_HAS_ANOMALY == 3)
+    for (size_t ix = 0; ix < result.visual_ad_count; ix++) {
+        auto bb = result.visual_ad_grid_cells[ix];
+        if (bb.value == 0) {
+            continue;
+        }
+
+        for (size_t x = bb.x; x < bb.x + bb.width; x++) {
+            for (size_t y = bb.y; y < bb.y + bb.height; y++) {
+                raw_features[(y * EI_CLASSIFIER_INPUT_WIDTH) + x] = (float)0xff0000;
+            }
+        }
+    }
+#endif
 
     create_bitmap_file("debug.bmp", raw_features.data(), EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
 #endif

@@ -136,8 +136,12 @@ int main(int argc, char** argv) {
             return 1;
         }
 
+    // print the predictions
+    printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                result.timing.dsp, result.timing.classification, result.timing.anomaly);
+
     #if EI_CLASSIFIER_OBJECT_DETECTION == 1
-        printf("Classification result (%d ms.):\n", result.timing.dsp + result.timing.classification);
+        printf("#Object detection results:\n");
         bool found_bb = false;
         for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
             auto bb = result.bounding_boxes[ix];
@@ -153,14 +157,22 @@ int main(int argc, char** argv) {
             printf("    no objects found\n");
         }
     #else
-        printf("%d ms. ", result.timing.dsp + result.timing.classification);
+        printf("#Classification results:\n");
         for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            printf("%s: %.05f", result.classification[ix].label, result.classification[ix].value);
-            if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
-                printf(", ");
-            }
+            printf("%s: %.05f\n", result.classification[ix].label, result.classification[ix].value);
         }
-        printf("\n");
+    #endif
+
+    #if EI_CLASSIFIER_HAS_ANOMALY == 3 // visual AD
+        printf("#Visual anomaly grid results:\n");
+        for (uint32_t i = 0; i < result.visual_ad_count; i++) {
+            ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
+            if (bb.value == 0) {
+                continue;
+            }
+            printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+        }
+        printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
     #endif
 
         // show the image on the window
