@@ -91,11 +91,32 @@ void json_send_classification_response(int id,
         bb_res.push_back(bb_json);
     }
 #else
+    #if EI_CLASSIFIER_LABEL_COUNT > 0
     nlohmann::json classify_res;
     for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
         classify_res[result.classification[ix].label] = result.classification[ix].value;
     }
+    #endif // EI_CLASSIFIER_LABEL_COUNT > 0
 #endif
+
+#if EI_CLASSIFIER_HAS_VISUAL_ANOMALY
+    nlohmann::json visual_ad_res = nlohmann::json::array();
+    for (size_t ix = 0; ix < result.visual_ad_count; ix++) {
+        auto bb = result.visual_ad_grid_cells[ix];
+        if (bb.value == 0) {
+            continue;
+        }
+        nlohmann::json bb_json = {
+            {"label", bb.label},
+            {"value", bb.value},
+            {"x", bb.x},
+            {"y", bb.y},
+            {"width", bb.width},
+            {"height", bb.height},
+        };
+        visual_ad_res.push_back(bb_json);
+    }
+#endif // EI_CLASSIFIER_HAS_VISUAL_ANOMALY
 
     nlohmann::json resp = {
         {"id", id},
@@ -104,9 +125,16 @@ void json_send_classification_response(int id,
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
             {"bounding_boxes", bb_res},
 #else
+    #if EI_CLASSIFIER_LABEL_COUNT > 0
             {"classification", classify_res},
+    #endif // EI_CLASSIFIER_LABEL_COUNT > 0
 #endif // EI_CLASSIFIER_OBJECT_DETECTION
-#if EI_CLASSIFIER_HAS_ANOMALY
+#if EI_CLASSIFIER_HAS_VISUAL_ANOMALY
+            {"visual_anomaly_grid", visual_ad_res},
+            {"visual_anomaly_max", result.visual_ad_result.max_value},
+            {"visual_anomaly_mean", result.visual_ad_result.mean_value},
+#endif // EI_CLASSIFIER_HAS_VISUAL_ANOMALY
+#if EI_CLASSIFIER_HAS_ANOMALY > 0
             {"anomaly", result.anomaly},
 #endif // EI_CLASSIFIER_HAS_ANOMALY == 1
         }},
