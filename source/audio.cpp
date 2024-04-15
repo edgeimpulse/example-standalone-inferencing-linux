@@ -34,12 +34,10 @@
 // Forward declarations
 int microphone_audio_signal_get_data(size_t, size_t, float *);
 
-#define SLICE_LENGTH_MS      250        // 4 inferences per second
-#define SLICE_LENGTH_VALUES  (EI_CLASSIFIER_RAW_SAMPLE_COUNT / (1000 / SLICE_LENGTH_MS))
-
 static bool use_debug = false; // Set this to true to see e.g. features generated from the raw signal and log WAV files
 
-static int16_t classifier_buffer[EI_CLASSIFIER_RAW_SAMPLE_COUNT * sizeof(int16_t)]; // full classifier buffer
+static int16_t classifier_buffer[EI_CLASSIFIER_RAW_SAMPLE_COUNT * sizeof(int16_t)]; // full classifier buffer (used for debug)
+static int16_t classifier_slice_buffer[EI_CLASSIFIER_SLICE_SIZE * sizeof(int16_t)]; // slice classifier buffer (used to classify)
 
 // libalsa state
 static snd_pcm_t *capture_handle;
@@ -220,11 +218,11 @@ void classify_current_buffer() {
 
     // classify the current buffer and print the results
     signal_t signal;
-    signal.total_length = EI_CLASSIFIER_RAW_SAMPLE_COUNT;
+    signal.total_length = EI_CLASSIFIER_SLICE_SIZE;
     signal.get_data = &microphone_audio_signal_get_data;
     ei_impulse_result_t result = { 0 };
 
-    EI_IMPULSE_ERROR r = run_classifier(&signal, &result, use_debug);
+    EI_IMPULSE_ERROR r = run_classifier_continuous(&signal, &result, use_debug, true);
     if (r != EI_IMPULSE_OK) {
         printf("ERR: Failed to run classifier (%d)\n", r);
         return;
@@ -270,34 +268,29 @@ int main(int argc, char **argv)
         exit(1);
     }
 
-    signal(SIGINT, close_alsa);
+    ::signal(SIGINT, close_alsa);
 
-    // allocate buffers for the slice
-    int16_t slice_buffer[SLICE_LENGTH_VALUES * sizeof(int16_t)];
-    uint32_t classify_count = 0;
+    run_classifier_init();
 
     while (1) {
-        int x = snd_pcm_readi(capture_handle, slice_buffer, SLICE_LENGTH_VALUES);
-        if (x != SLICE_LENGTH_VALUES) {
+        int x = snd_pcm_readi(capture_handle, classifier_slice_buffer, EI_CLASSIFIER_SLICE_SIZE);
+        if (x != EI_CLASSIFIER_SLICE_SIZE) {
             printf("Failed to read audio data (%d)\n", x);
             return 1;
         }
 
         // so let's say we have a 16000 element classifier_buffer
         // then we want to move 4000..16000 to position 0..12000
-        // and fill 12000..16000 with the data from slice_buffer
+        // and fill 12000..16000 with the data from classifier_slice_buffer
+        // (this is only used to write full second length audio files in debug mode,
+        //  the actual inference is done just on the slice)
 
-        // 1. roll -SLICE_LENGTH_VALUES here
-        numpy::roll(classifier_buffer, EI_CLASSIFIER_RAW_SAMPLE_COUNT, -SLICE_LENGTH_VALUES);
+        // 1. roll -EI_CLASSIFIER_SLICE_SIZE here
+        numpy::roll(classifier_buffer, EI_CLASSIFIER_RAW_SAMPLE_COUNT, -EI_CLASSIFIER_SLICE_SIZE);
 
         // 2. copy slice buffer to the end
-        const size_t classifier_buffer_offset = EI_CLASSIFIER_RAW_SAMPLE_COUNT - SLICE_LENGTH_VALUES;
-        memcpy(classifier_buffer + classifier_buffer_offset, slice_buffer, SLICE_LENGTH_VALUES * sizeof(int16_t));
-
-        // ignore the first N slices we classify, we don't have a complete frame yet
-        if (++classify_count < EI_CLASSIFIER_RAW_SAMPLE_COUNT / SLICE_LENGTH_VALUES) {
-            continue;
-        }
+        const size_t classifier_buffer_offset = EI_CLASSIFIER_RAW_SAMPLE_COUNT - EI_CLASSIFIER_SLICE_SIZE;
+        memcpy(classifier_buffer + classifier_buffer_offset, classifier_slice_buffer, EI_CLASSIFIER_SLICE_SIZE * sizeof(int16_t));
 
         // 3. and classify!
         classify_current_buffer();
@@ -310,7 +303,7 @@ int main(int argc, char **argv)
  * Get data from the classifier buffer
  */
 int microphone_audio_signal_get_data(size_t offset, size_t length, float *out_ptr) {
-    return numpy::int16_to_float(classifier_buffer + offset, out_ptr, length);
+    return numpy::int16_to_float(classifier_slice_buffer + offset, out_ptr, length);
 }
 
 #if !defined(EI_CLASSIFIER_SENSOR) || EI_CLASSIFIER_SENSOR != EI_CLASSIFIER_SENSOR_MICROPHONE
