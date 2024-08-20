@@ -70,6 +70,13 @@ TARGET_JETSON_COMMON=1
 TENSORRT_VERSION?=8
 endif
 
+ifeq (${USE_ETHOS},1)
+CFLAGS += -DEI_ETHOS_LINUX
+CFLAGS += -Iedge-impulse-sdk/third_party/ethos_kernel_driver/include/
+CFLAGS += -Iedge-impulse-sdk/third_party/ethos_driver_library/include
+CXXSOURCES += edge-impulse-sdk/porting/ethos-u-driver-stack-imx/driver_library/src/ethosu.cpp
+endif
+
 ifeq (${USE_FULL_TFLITE},1)
 CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -Itensorflow-lite/
