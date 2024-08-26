@@ -12,14 +12,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/internal/tensor_utils.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_utils.h"
 
-#include "tensorflow/lite/kernels/internal/optimized/neon_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_check.h"
 
 #if defined(__SSSE3__) && !defined(TF_LITE_STATIC_MEMORY)
-#include "tensorflow/lite/kernels/internal/optimized/sse_tensor_utils.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/sse_tensor_utils.h"
 #elif defined(USE_NEON) && !defined(TF_LITE_STATIC_MEMORY)
-#include "tensorflow/lite/kernels/internal/optimized/neon_tensor_utils.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_tensor_utils.h"
 #else
-#include "tensorflow/lite/kernels/internal/reference/portable_tensor_utils.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/portable_tensor_utils.h"
 #endif  // __SSSE3__ or USE_NEON

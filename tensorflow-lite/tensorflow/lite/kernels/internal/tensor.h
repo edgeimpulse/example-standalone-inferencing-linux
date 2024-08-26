@@ -17,8 +17,8 @@ limitations under the License.
 
 // Most functionality has been moved into a version of this file that doesn't
 // rely on std::string, so that it can be used in TFL Micro.
-#include "tensorflow/lite/kernels/internal/portable_tensor.h"
-#include "tensorflow/lite/string_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/portable_tensor.h"
+#include "tensorflow-lite/tensorflow/lite/string_util.h"
 
 namespace tflite {
 

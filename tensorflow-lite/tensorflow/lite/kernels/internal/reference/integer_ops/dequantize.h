@@ -16,8 +16,8 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_INTEGER_OPS_DEQUANTIZE_H_
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_INTEGER_OPS_DEQUANTIZE_H_
 
-#include "tensorflow/lite/kernels/internal/common.h"
-#include "tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
 
 namespace tflite {
 namespace reference_integer_ops {

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/kernels/perception/perception_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/perception/perception_ops.h"
 
 namespace tflite {
 namespace ops {

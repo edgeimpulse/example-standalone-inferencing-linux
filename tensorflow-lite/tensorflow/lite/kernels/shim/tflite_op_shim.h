@@ -21,14 +21,17 @@ limitations under the License.
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "flatbuffers/flexbuffers.h"  // from @flatbuffers
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
-#include "tensorflow/lite/kernels/shim/op_kernel.h"
-#include "tensorflow/lite/kernels/shim/shape.h"
-#include "tensorflow/lite/kernels/shim/tensor_view.h"
-#include "tensorflow/lite/kernels/shim/tflite_tensor_view.h"
-#include "tensorflow/lite/mutable_op_resolver.h"
+#include "tensorflow-lite/flatbuffers/flexbuffers.h"  // from @flatbuffers
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/op_kernel.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/shape.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tensor_view.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tflite_tensor_view.h"
+#include "tensorflow-lite/tensorflow/lite/mutable_op_resolver.h"
+
+// This file contains the TFLite adapter. That is, it takes a `OpKernelShim`
+// class and provides a TFLite kernel out of it.
 
 namespace tflite {
 namespace shim {
@@ -36,24 +39,28 @@ namespace shim {
 // TfLite implementation of the methods during an op kernel initialization
 class TfLiteInitContext : public InitContext<TfLiteInitContext> {
  public:
-  TfLiteInitContext(const TfLiteContext* context, const char* buffer,
-                    const size_t length);
+  TfLiteInitContext(const TfLiteContext* context,
+                    const flexbuffers::Map* attr_map);
   // Read a given attribute
   absl::StatusOr<AttrValue> GetAttr(const std::string& attr_name) const;
 
  private:
-  const flexbuffers::Map attr_map_;
+  const flexbuffers::Map* attr_map_;
 };
 
 // TfLite implementation of the methods during an op kernel invocation
 class TfLiteInvokeContext : public InvokeContext<TfLiteInvokeContext> {
  public:
-  TfLiteInvokeContext(TfLiteContext* context_, TfLiteNode* node_,
-                      const std::vector<bool>& is_static_output);
+  TfLiteInvokeContext(TfLiteContext* context_, TfLiteNode* node_);
   // Read an input tensor
   ConstTensorViewOr GetInput(const int idx) const;
-  // Get a mutable output tensor
+  // Get a mutable output tensor. For output string tensors, this should only
+  // be called once.
   TensorViewOr GetOutput(const int idx, const Shape& shape) const;
+  // Number of input tensors
+  int NumInputs() const;
+  // Number of output tensors
+  int NumOutputs() const;
 
  private:
   absl::Status AssertShapesEqual(const TfLiteIntArray* dims,
@@ -64,7 +71,6 @@ class TfLiteInvokeContext : public InvokeContext<TfLiteInvokeContext> {
 
   TfLiteContext* context_;
   TfLiteNode* node_;
-  const std::vector<bool>& is_static_output_;
 };
 
 // TfLite implementation of the methods during shape inference
@@ -72,6 +78,7 @@ class TfLiteShapeInferenceContext
     : public ShapeInferenceContext<TfLiteShapeInferenceContext> {
  public:
   TfLiteShapeInferenceContext(TfLiteContext* context, TfLiteNode* node,
+                              const flexbuffers::Map* attr_map,
                               std::vector<Shape>* inferred_shapes);
   // Read an input tensor shape
   ShapeOr GetInputShape(const int idx) const;
@@ -79,10 +86,17 @@ class TfLiteShapeInferenceContext
   absl::Status SetOutputShape(const int idx, const Shape& shape);
   // Read an input tensor during shape inference
   ConstTensorViewOr GetInputTensor(const int idx) const;
+  // Read a given attribute
+  absl::StatusOr<AttrValue> GetAttr(const std::string& attr_name) const;
+  // Number of input tensors
+  int NumInputs() const;
+  // Number of output tensors
+  int NumOutputs() const;
 
  private:
   TfLiteContext* context_;
   TfLiteNode* node_;
+  const flexbuffers::Map* attr_map_;
   std::vector<Shape>* inferred_shapes_;
 };
 
@@ -98,10 +112,10 @@ Shape TfLiteShapeToShape(const TfLiteIntArray* tflite_shape);
 
 // An op kernel base class which is an adapter between an Op implementation
 // (OpKernelShim subclass) and TFLite runtime
-template <template <Runtime> typename Impl>
+template <template <Runtime, typename...> typename Impl, typename... Ts>
 class TfLiteOpKernel {
  public:
-  using ImplType = Impl<Runtime::kTfLite>;
+  using ImplType = Impl<Runtime::kTfLite, Ts...>;
 
   // Builds a TfLiteRegistration object to register this with the TfLite runtime
   static TfLiteRegistration* GetTfLiteRegistration() {
@@ -112,41 +126,90 @@ class TfLiteOpKernel {
 
   // Adds this op kernel to the passed in op resolver
   static void Add(MutableOpResolver* resolver) {
-    resolver->AddCustom(ImplType::kOpName, GetTfLiteRegistration());
+    resolver->AddCustom(ImplType::OpName(), GetTfLiteRegistration());
   }
 
-  // A boolean indicator for each output whether its shape is fully known or
-  // not.
-  static const std::vector<bool>& StaticOutputShapeIndicator();
-
   // The operation name
-  static const char* OpName() { return ImplType::kOpName; }
+  static const char* OpName() { return ImplType::OpName(); }
 
  protected:
+  // The data that is stored in node::user_data.
+  struct UserData {
+    UserData(const char* buffer, size_t length) {
+      impl = new ImplType;
+      attr_map = new flexbuffers::Map(
+          flexbuffers::GetRoot(reinterpret_cast<const uint8_t*>(buffer), length)
+              .AsMap());
+    }
+
+    // An instance of OpKernelShim<TF or TFLite>.
+    // This is so that the Invoke(), Prepare(), etc. can call Invoke(),
+    // ShapeInference(), ... on the kernel defined using this library.
+    ImplType* impl = nullptr;
+    // Attribute map for the op kernel.
+    // The map needs to be accessible because the library provides
+    // GetAttr() during ShapeInference() which is called during Prepare(). So
+    // this needs to be accessible at that point.
+    const flexbuffers::Map* attr_map = nullptr;
+
+    ~UserData() {
+      if (impl) delete impl;
+      if (attr_map) delete attr_map;
+    }
+  };
+
   static void* Init(TfLiteContext* context, const char* buffer, size_t length) {
-    ImplType* impl = new ImplType;
-    TfLiteInitContext ctx(context, buffer, length);
-    auto status = impl->Init(&ctx);
+    auto* user_data = new UserData(buffer, length);
+    TfLiteInitContext ctx(context, user_data->attr_map);
+    auto status = user_data->impl->Init(&ctx);
     StatusToTfLiteStatus(context, status);
-    return impl;
+    return user_data;
   }
 
   static void Free(TfLiteContext* context, void* buffer) {
-    if (buffer != nullptr) delete static_cast<ImplType*>(buffer);
+    if (buffer) delete static_cast<UserData*>(buffer);
   }
 
+  // Resizes the Output Tensor to their shape. There are two cases:
+  //
+  // case 1: output shape is known after ShapeInference() was called during
+  //     Prepare()
+  //   ResizeTensor(output_of_shape_inference)
+  // case 2: output shape is not fully defined even after shape inference
+  //   SetTensorToDynamic(...)
   static TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
-    return ResizeOutputTensorsWithKnownShape(context, node);
+    const size_t num_outputs = ::tflite::NumOutputs(node);
+    std::vector<Shape> inferred_output_shapes(num_outputs);
+    const auto* attr_map = static_cast<UserData*>(node->user_data)->attr_map;
+    TfLiteShapeInferenceContext ctx(context, node, attr_map,
+                                    &inferred_output_shapes);
+    auto status = ImplType::ShapeInference(&ctx);
+    TF_LITE_ENSURE_STATUS(StatusToTfLiteStatus(context, status));
+    // Output shapes.
+    for (int output_idx = 0; output_idx < num_outputs; ++output_idx) {
+      TfLiteTensor* output_tensor =
+          tflite::GetOutput(context, node, output_idx);
+      TF_LITE_ENSURE(context, output_tensor != nullptr);
+      if (inferred_output_shapes[output_idx].FullyDefined()) {
+        // Case: output shape can be inferred during `Prepare`
+        TF_LITE_ENSURE_OK(context,
+                          context->ResizeTensor(
+                              context, output_tensor,
+                              ShapeToTfLiteShape(
+                                  inferred_output_shapes[output_idx].value())));
+      } else {
+        // Case: output shape is dynamic
+        tflite::SetTensorToDynamic(output_tensor);
+      }
+    }
+    return kTfLiteOk;
   }
 
   static TfLiteStatus Invoke(TfLiteContext* context, TfLiteNode* node) {
-    TfLiteInvokeContext ctx(context, node, StaticOutputShapeIndicator());
+    TfLiteInvokeContext ctx(context, node);
     return StatusToTfLiteStatus(
-        context, static_cast<ImplType*>(node->user_data)->Invoke(&ctx));
+        context, static_cast<UserData*>(node->user_data)->impl->Invoke(&ctx));
   }
-
-  static TfLiteStatus ResizeOutputTensorsWithKnownShape(TfLiteContext* context,
-                                                        TfLiteNode* node);
 };
 
 template <>
@@ -155,76 +218,6 @@ struct ContextTypeForRuntime<Runtime::kTfLite> {
   using Invoke = TfLiteInvokeContext;
   using ShapeInference = TfLiteShapeInferenceContext;
 };
-
-////////////////////////////////////////////
-///////////////////////////// Implementation
-
-template <template <Runtime> typename Impl>
-const std::vector<bool>& TfLiteOpKernel<Impl>::StaticOutputShapeIndicator() {
-  static std::vector<bool>* ret = []() {
-    auto ret = new std::vector<bool>;
-    const auto outputs_decl = ImplType::Outputs();
-    ret->reserve(outputs_decl.size());
-    for (const TensorDeclaration& output_decl : outputs_decl) {
-      ret->emplace_back(output_decl.shape.FullyDefined());
-    }
-    return ret;
-  }();
-  return *ret;
-}
-
-// Resizes the Output Tensor to their shape. It goes over three cases:
-//
-// case 1: output shape is statically set in the op declaration
-//   ResizeTensor(static_shape)
-// case 2: output shape is known after ShapeInference() was called during
-//     Prepare()
-//   ResizeTensor(output_of_shape_inference)
-// case 3: output shape is not fully defined even after shape inference
-//   SetTensorToDynamic(...)
-template <template <Runtime> typename Impl>
-TfLiteStatus TfLiteOpKernel<Impl>::ResizeOutputTensorsWithKnownShape(
-    TfLiteContext* context, TfLiteNode* node) {
-  // Whether all output shapes are static or there's a need to run shape
-  // inference.
-  static const auto& is_static_output = StaticOutputShapeIndicator();
-  static const bool all_outputs_static =
-      std::all_of(is_static_output.cbegin(), is_static_output.cend(),
-                  [](bool b) { return b; });
-  const size_t num_outputs = ::tflite::NumOutputs(node);
-  std::vector<Shape> inferred_output_shapes(num_outputs);
-  TfLiteShapeInferenceContext ctx(context, node, &inferred_output_shapes);
-  if (!all_outputs_static) {
-    auto status = ImplType::ShapeInference(&ctx);
-    TF_LITE_ENSURE_STATUS(StatusToTfLiteStatus(context, status));
-  }
-  // Output shapes.
-  const auto outputs_decl = ImplType::Outputs();
-  TF_LITE_ENSURE_EQ(context, num_outputs, outputs_decl.size());
-  for (int output_idx = 0; output_idx < num_outputs; ++output_idx) {
-    TfLiteTensor* output_tensor = tflite::GetOutput(context, node, output_idx);
-    TF_LITE_ENSURE(context, output_tensor != nullptr);
-    const TensorDeclaration& output_decl = outputs_decl[output_idx];
-    if (is_static_output[output_idx]) {
-      // Case: output shape is static
-      TF_LITE_ENSURE_OK(
-          context,
-          context->ResizeTensor(context, output_tensor,
-                                ShapeToTfLiteShape(output_decl.shape.value())));
-    } else if (inferred_output_shapes[output_idx].FullyDefined()) {
-      // Case: output shape can be inferred during `Prepare`
-      TF_LITE_ENSURE_OK(
-          context,
-          context->ResizeTensor(
-              context, output_tensor,
-              ShapeToTfLiteShape(inferred_output_shapes[output_idx].value())));
-    } else {
-      // Case: output shape is dynamic
-      tflite::SetTensorToDynamic(output_tensor);
-    }
-  }
-  return kTfLiteOk;
-}
 
 }  // namespace shim
 }  // namespace tflite

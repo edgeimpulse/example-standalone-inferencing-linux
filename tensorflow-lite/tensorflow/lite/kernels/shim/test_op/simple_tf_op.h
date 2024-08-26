@@ -15,8 +15,8 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_SHIM_TEST_OP_SIMPLE_TF_OP_H_
 #define TENSORFLOW_LITE_KERNELS_SHIM_TEST_OP_SIMPLE_TF_OP_H_
 
-#include "tensorflow/lite/kernels/shim/test_op/simple_op.h"
-#include "tensorflow/lite/kernels/shim/tf_op_shim.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/test_op/simple_op.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tf_op_shim.h"
 
 namespace tflite {
 namespace shim {

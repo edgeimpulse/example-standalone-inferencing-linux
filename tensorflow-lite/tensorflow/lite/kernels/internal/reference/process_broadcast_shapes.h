@@ -15,7 +15,9 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_PROCESS_BROADCAST_SHAPES_H_
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_PROCESS_BROADCAST_SHAPES_H_
 
-#include "tensorflow/lite/kernels/internal/types.h"
+#include <algorithm>
+
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
 
 namespace tflite {
 

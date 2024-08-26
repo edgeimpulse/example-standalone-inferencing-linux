@@ -24,12 +24,12 @@ limitations under the License.
 // NEON_2_SSE translator library. If a native SSE version of a function is
 // implemented, replace the appropriate one to SSE_OR_PORTABLE.
 
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/internal/optimized/neon_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/neon_tensor_utils_impl.h"
-#include "tensorflow/lite/kernels/internal/optimized/sse_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/sse_tensor_utils_impl.h"
-#include "tensorflow/lite/kernels/internal/reference/portable_tensor_utils_impl.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_tensor_utils_impl.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/sse_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/sse_tensor_utils_impl.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/portable_tensor_utils_impl.h"
 
 namespace tflite {
 namespace tensor_utils {
@@ -37,8 +37,13 @@ namespace tensor_utils {
 void MatrixBatchVectorMultiplyAccumulate(const float* matrix, int m_rows,
                                          int m_cols, const float* vector,
                                          int n_batch, float* result) {
+#if defined(__AVX2__)
+  Avx2MatrixBatchVectorMultiplyAccumulateImpl(matrix, m_rows, m_cols, vector,
+                                              n_batch, result);
+#else
   NEON_OR_PORTABLE(MatrixBatchVectorMultiplyAccumulate, matrix, m_rows, m_cols,
                    vector, n_batch, result);
+#endif
 }
 
 void MatrixBatchVectorMultiplyAccumulate(
@@ -79,6 +84,22 @@ void SparseMatrixBatchVectorMultiplyAccumulate1x4(
                    segments, indices, m_rows, m_cols, vector, n_batch, result);
 }
 
+void SparseMatrixBatchVectorMultiplyAccumulate1x16(
+    const int8_t* __restrict__ matrix, const int32_t* __restrict__ segments,
+    const int32_t* __restrict__ indices, int m_rows, int m_cols,
+    const int8_t* __restrict__ vector, const int32_t* __restrict__ bias_vector,
+    int n_batch, const int32_t input_offset, const int32_t output_multiplier,
+    const int32_t output_shift, const int32_t* per_channel_scale,
+    const int32_t* per_channel_shift, const int32_t output_offset,
+    const int32_t output_activation_min, const int32_t output_activation_max,
+    int8_t* __restrict__ result) {
+  NEON_OR_PORTABLE(SparseMatrixBatchVectorMultiplyAccumulate1x16, matrix,
+                   segments, indices, m_rows, m_cols, vector, bias_vector,
+                   n_batch, input_offset, output_multiplier, output_shift,
+                   per_channel_scale, per_channel_shift, output_offset,
+                   output_activation_min, output_activation_max, result);
+}
+
 void SparseMatrixBatchVectorMultiplyAccumulate(
     const float* __restrict__ matrix, const uint8_t* __restrict__ ledger,
     int m_rows, int m_cols, const float* __restrict__ vector, int n_batch,
@@ -91,9 +112,10 @@ void SparseMatrixBatchVectorMultiplyAccumulate(
     const int8_t* __restrict__ matrix, const uint8_t* __restrict__ ledger,
     const int m_rows, const int m_cols, const int8_t* __restrict__ vectors,
     const float* __restrict__ scaling_factors, int n_batch,
-    float* __restrict__ result) {
+    float* __restrict__ result, const float* per_channel_scale) {
   SSE_OR_PORTABLE(SparseMatrixBatchVectorMultiplyAccumulate, matrix, ledger,
-                  m_rows, m_cols, vectors, scaling_factors, n_batch, result);
+                  m_rows, m_cols, vectors, scaling_factors, n_batch, result,
+                  per_channel_scale);
 }
 
 void MatrixBatchVectorMultiplyAccumulate(

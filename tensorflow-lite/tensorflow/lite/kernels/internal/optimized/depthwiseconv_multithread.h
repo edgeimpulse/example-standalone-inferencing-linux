@@ -15,11 +15,13 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_INTERNAL_OPTIMIZED_DEPTHWISECONV_MULTITHREAD_H_
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_OPTIMIZED_DEPTHWISECONV_MULTITHREAD_H_
 
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/cpu_backend_threadpool.h"
-#include "tensorflow/lite/kernels/internal/optimized/cpu_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/depthwiseconv_float.h"
-#include "tensorflow/lite/kernels/internal/optimized/depthwiseconv_uint8.h"
+#include <algorithm>
+
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_threadpool.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/cpu_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/depthwiseconv_float.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/depthwiseconv_uint8.h"
 
 namespace tflite {
 namespace optimized_ops {

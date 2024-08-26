@@ -17,8 +17,8 @@ limitations under the License.
 
 #include <vector>
 
-#include "tensorflow/lite/tools/delegates/delegate_provider.h"
-#include "tensorflow/lite/tools/tool_params.h"
+#include "tensorflow-lite/tensorflow/lite/tools/delegates/delegate_provider.h"
+#include "tensorflow-lite/tensorflow/lite/tools/tool_params.h"
 
 namespace tflite {
 // A utility class to provide TfLite delegate creations for kernel tests. The
@@ -63,6 +63,12 @@ class KernelTestDelegateProviders {
   CreateAllDelegates() const {
     return delegate_list_util_.CreateAllRankedDelegates();
   }
+
+  // An option name to use Simple Memory Allocator.
+  static constexpr char kUseSimpleAllocator[] = "use_simple_allocator";
+  // An option name to provide acceleration test config file.
+  static constexpr char kAccelerationTestConfigPath[] =
+      "acceleration_test_config_path";
 
  private:
   // Contain delegate-related parameters that are initialized from command-line

@@ -12,16 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/eigen_support.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/eigen_support.h"
 
 #include <functional>
 #include <memory>
 #include <utility>
 
-#include "tensorflow/lite/arena_planner.h"
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/optimized/eigen_spatial_convolutions.h"
-#include "tensorflow/lite/kernels/op_macros.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/eigen_spatial_convolutions.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/op_macros.h"
+
+#ifndef EIGEN_DONT_ALIGN
+#include "tensorflow-lite/tensorflow/lite/util.h"
+#endif  // EIGEN_DONT_ALIGN
 
 namespace tflite {
 namespace eigen_support {
@@ -38,12 +41,11 @@ int GetNumThreads(int num_threads) {
 
 #ifndef EIGEN_DONT_ALIGN
 // Eigen may require buffers to be aligned to 16, 32 or 64 bytes depending on
-// hardware architecture and build configurations.
-// If the static assertion fails, try to increase `kDefaultTensorAlignment` to
-// in `arena_planner.h` to 32 or 64.
+// hardware architecture and build configurations. If the static assertion
+// fails, try to increase `kDefaultTensorAlignment` in `util.h` to 32 or 64.
 static_assert(
     kDefaultTensorAlignment % EIGEN_MAX_ALIGN_BYTES == 0,
-    "kDefaultArenaAlignment doesn't comply with Eigen alignment requirement.");
+    "kDefaultTensorAlignment doesn't comply with Eigen alignment requirement.");
 #endif  // EIGEN_DONT_ALIGN
 
 // Helper routine for updating the global Eigen thread count used for OpenMP.
@@ -68,7 +70,7 @@ class EigenThreadPoolWrapper : public Eigen::ThreadPoolInterface {
   explicit EigenThreadPoolWrapper(int num_threads) {
     // Avoid creating any threads for the single-threaded case.
     if (num_threads > 1) {
-      pool_.reset(new Eigen::ThreadPool(num_threads));
+      pool_ = std::make_unique<Eigen::ThreadPool>(num_threads);
     }
   }
   ~EigenThreadPoolWrapper() override {}
@@ -100,10 +102,10 @@ class LazyEigenThreadPoolHolder {
   // Gets the ThreadPoolDevice, creating if necessary.
   const Eigen::ThreadPoolDevice* GetThreadPoolDevice() {
     if (!device_) {
-      thread_pool_wrapper_.reset(
-          new EigenThreadPoolWrapper(target_num_threads_));
-      device_.reset(new Eigen::ThreadPoolDevice(thread_pool_wrapper_.get(),
-                                                target_num_threads_));
+      thread_pool_wrapper_ =
+          std::make_unique<EigenThreadPoolWrapper>(target_num_threads_);
+      device_ = std::make_unique<Eigen::ThreadPoolDevice>(
+          thread_pool_wrapper_.get(), target_num_threads_);
     }
     return device_.get();
   }
@@ -160,8 +162,8 @@ void IncrementUsageCounter(TfLiteContext* context) {
     ptr = new RefCountedEigenContext;
     ptr->type = kTfLiteEigenContext;
     ptr->Refresh = Refresh;
-    ptr->thread_pool_holder.reset(
-        new LazyEigenThreadPoolHolder(context->recommended_num_threads));
+    ptr->thread_pool_holder = std::make_unique<LazyEigenThreadPoolHolder>(
+        context->recommended_num_threads);
     ptr->num_references = 0;
     context->SetExternalContext(context, kTfLiteEigenContext, ptr);
   }

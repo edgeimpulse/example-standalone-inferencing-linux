@@ -12,7 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/parse_example/example_proto_fast_parsing.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/parse_example/example_proto_fast_parsing.h"
+
+#include <algorithm>
+#include <utility>
 
 namespace tensorflow {
 namespace example {
@@ -41,7 +44,7 @@ void CopySparseBufferToTensor(DataType dtype, size_t offset, SparseBuffer* src,
   switch (dtype) {
     case DT_INT64: {
       std::copy(src->int64_list.begin(), src->int64_list.end(),
-                dst->flat<int64>().data() + offset);
+                dst->flat<int64_t>().data() + offset);
       break;
     }
     case DT_FLOAT: {
@@ -153,7 +156,8 @@ void CopyOrMoveBlock(const tstring* b, const tstring* e, tstring* t) {
 }
 
 template <>
-const SmallVector<int64>& GetListFromBuffer<int64>(const SparseBuffer& buffer) {
+const SmallVector<int64_t>& GetListFromBuffer<int64_t>(
+    const SparseBuffer& buffer) {
   return buffer.int64_list;
 }
 template <>

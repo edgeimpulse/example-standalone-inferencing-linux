@@ -12,19 +12,19 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/internal/reference/comparisons.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/comparisons.h"
 
 #include <stdint.h>
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/internal/quantization_util.h"
-#include "tensorflow/lite/kernels/internal/reference/reference_ops.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/internal/types.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
-#include "tensorflow/lite/string_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/quantization_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/reference_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/string_util.h"
 
 namespace tflite {
 namespace ops {
@@ -179,6 +179,10 @@ TfLiteStatus EqualEval(TfLiteContext* context, TfLiteNode* node) {
       Comparison<float, reference_ops::EqualFn>(input1, input2, output,
                                                 requires_broadcast);
       break;
+    case kTfLiteInt16:
+      Comparison<int16_t, reference_ops::EqualFn>(input1, input2, output,
+                                                  requires_broadcast);
+      break;
     case kTfLiteInt32:
       Comparison<int32_t, reference_ops::EqualFn>(input1, input2, output,
                                                   requires_broadcast);
@@ -200,7 +204,7 @@ TfLiteStatus EqualEval(TfLiteContext* context, TfLiteNode* node) {
                        requires_broadcast);
       break;
     default:
-      context->ReportError(
+      TF_LITE_KERNEL_LOG(
           context,
           "Does not support type %d, requires bool|float|int|uint8|string",
           input1->type);
@@ -250,7 +254,7 @@ TfLiteStatus NotEqualEval(TfLiteContext* context, TfLiteNode* node) {
                        output, requires_broadcast);
       break;
     default:
-      context->ReportError(
+      TF_LITE_KERNEL_LOG(
           context,
           "Does not support type %d, requires bool|float|int|uint8|string",
           input1->type);
@@ -292,9 +296,9 @@ TfLiteStatus GreaterEval(TfLiteContext* context, TfLiteNode* node) {
           input1, input2, output, requires_broadcast);
       break;
     default:
-      context->ReportError(context,
-                           "Does not support type %d, requires float|int|uint8",
-                           input1->type);
+      TF_LITE_KERNEL_LOG(context,
+                         "Does not support type %d, requires float|int|uint8",
+                         input1->type);
       return kTfLiteError;
   }
   return kTfLiteOk;
@@ -316,6 +320,10 @@ TfLiteStatus GreaterEqualEval(TfLiteContext* context, TfLiteNode* node) {
       Comparison<float, reference_ops::GreaterEqualFn>(input1, input2, output,
                                                        requires_broadcast);
       break;
+    case kTfLiteInt16:
+      Comparison<int16_t, reference_ops::GreaterEqualFn>(input1, input2, output,
+                                                         requires_broadcast);
+      break;
     case kTfLiteInt32:
       Comparison<int32_t, reference_ops::GreaterEqualFn>(input1, input2, output,
                                                          requires_broadcast);
@@ -333,9 +341,9 @@ TfLiteStatus GreaterEqualEval(TfLiteContext* context, TfLiteNode* node) {
           input1, input2, output, requires_broadcast);
       break;
     default:
-      context->ReportError(context,
-                           "Does not support type %d, requires float|int|uint8",
-                           input1->type);
+      TF_LITE_KERNEL_LOG(context,
+                         "Does not support type %d, requires float|int|uint8",
+                         input1->type);
       return kTfLiteError;
   }
   return kTfLiteOk;
@@ -357,6 +365,10 @@ TfLiteStatus LessEval(TfLiteContext* context, TfLiteNode* node) {
       Comparison<float, reference_ops::LessFn>(input1, input2, output,
                                                requires_broadcast);
       break;
+    case kTfLiteInt16:
+      Comparison<int16_t, reference_ops::LessFn>(input1, input2, output,
+                                                 requires_broadcast);
+      break;
     case kTfLiteInt32:
       Comparison<int32_t, reference_ops::LessFn>(input1, input2, output,
                                                  requires_broadcast);
@@ -374,9 +386,9 @@ TfLiteStatus LessEval(TfLiteContext* context, TfLiteNode* node) {
                                                          requires_broadcast);
       break;
     default:
-      context->ReportError(context,
-                           "Does not support type %d, requires float|int|uint8",
-                           input1->type);
+      TF_LITE_KERNEL_LOG(context,
+                         "Does not support type %d, requires float|int|uint8",
+                         input1->type);
       return kTfLiteError;
   }
   return kTfLiteOk;
@@ -415,9 +427,9 @@ TfLiteStatus LessEqualEval(TfLiteContext* context, TfLiteNode* node) {
           input1, input2, output, requires_broadcast);
       break;
     default:
-      context->ReportError(context,
-                           "Does not support type %d, requires float|int|uint8",
-                           input1->type);
+      TF_LITE_KERNEL_LOG(context,
+                         "Does not support type %d, requires float|int|uint8",
+                         input1->type);
       return kTfLiteError;
   }
   return kTfLiteOk;

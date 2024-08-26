@@ -16,8 +16,8 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_GRU_CELL_H_
 #define TENSORFLOW_LITE_KERNELS_GRU_CELL_H_
 
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
 
 namespace tflite {
 namespace ops {

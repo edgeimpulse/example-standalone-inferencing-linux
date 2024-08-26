@@ -20,12 +20,12 @@ limitations under the License.
 #include <algorithm>
 #include <limits>
 
-#include "tensorflow/lite/c/builtin_op_data.h"
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/common.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/internal/tensor_utils.h"
-#include "tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/builtin_op_data.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_utils.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
 
 // SVDF op that compresses a fully connected op via low-rank matrix
 // factorization. See https://research.google.com/pubs/archive/43813.pdf for

@@ -15,8 +15,8 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_PROFILING_PROFILER_H_
 #define TENSORFLOW_LITE_PROFILING_PROFILER_H_
 
-#include "tensorflow/lite/profiling/buffered_profiler.h"
-#include "tensorflow/lite/profiling/noop_profiler.h"
+#include "tensorflow-lite/tensorflow/lite/profiling/buffered_profiler.h"
+#include "tensorflow-lite/tensorflow/lite/profiling/noop_profiler.h"
 
 namespace tflite {
 namespace profiling {

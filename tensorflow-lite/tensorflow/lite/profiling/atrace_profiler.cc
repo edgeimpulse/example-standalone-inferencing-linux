@@ -12,16 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/profiling/atrace_profiler.h"
+#include "tensorflow-lite/tensorflow/lite/profiling/atrace_profiler.h"
 
 #include <dlfcn.h>
 #if defined(__ANDROID__)
 #include <sys/system_properties.h>
 #endif
 
+#include <string>
 #include <type_traits>
-
-#include "absl/strings/str_cat.h"
 
 namespace tflite {
 namespace profiling {
@@ -71,8 +70,10 @@ class ATraceProfiler : public tflite::Profiler {
       // Regardless the 'event_type', we encode the perfetto event name as
       // tag@event_metadata1/event_metadata2. In case of OPERATOR_INVOKE_EVENT,
       // the perfetto event name will be op_name@node_index/subgraph_index
-      std::string trace_event_tag =
-          absl::StrCat(tag, "@", event_metadata1, "/", event_metadata2);
+      std::string trace_event_tag = tag;
+      trace_event_tag += "@";
+      trace_event_tag += std::to_string(event_metadata1) + "/" +
+                         std::to_string(event_metadata2);
       atrace_begin_section_(trace_event_tag.c_str());
     }
     return 0;

@@ -36,10 +36,10 @@ limitations under the License.
 #include <cstdlib>
 #include <cstring>
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
-#include "tensorflow/lite/string_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/string_util.h"
 
 namespace tflite {
 namespace ops {

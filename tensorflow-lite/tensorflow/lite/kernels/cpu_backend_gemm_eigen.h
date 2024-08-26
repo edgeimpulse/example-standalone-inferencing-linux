@@ -18,8 +18,8 @@ limitations under the License.
 
 #ifndef TFLITE_WITH_RUY
 
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_params.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_params.h"
 
 namespace tflite {
 namespace cpu_backend_gemm {

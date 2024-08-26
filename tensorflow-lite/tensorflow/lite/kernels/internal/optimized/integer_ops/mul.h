@@ -19,13 +19,13 @@ limitations under the License.
 
 #include "fixedpoint/fixedpoint.h"
 #include "ruy/profiler/instrumentation.h"  // from @ruy
-#include "tensorflow/lite/kernels/internal/common.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/internal/optimized/cpu_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/neon_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
-#include "tensorflow/lite/kernels/internal/reference/integer_ops/mul.h"
-#include "tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/cpu_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/integer_ops/mul.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
 
 namespace tflite {
 namespace optimized_integer_ops {
@@ -250,7 +250,7 @@ inline void BroadcastMulDispatch(const ArithmeticParams& params,
                                  const RuntimeShape& output_shape,
                                  int8* output_data) {
   if (params.broadcast_category == BroadcastableOpCategory::kGenericBroadcast) {
-    return reference_integer_ops::BroadcastMul4DSlow(
+    return reference_integer_ops::BroadcastMul6DSlow(
         params, input1_shape, input1_data, input2_shape, input2_data,
         output_shape, output_data);
   }

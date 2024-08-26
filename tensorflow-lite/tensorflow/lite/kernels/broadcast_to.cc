@@ -12,16 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/internal/reference/broadcast_to.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/broadcast_to.h"
 
 #include <string.h>
 
 #include <cstdint>
 #include <memory>
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -101,7 +101,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   // Not yet support string type due to the use of memcopy with fixed size.
   TF_LITE_ENSURE(context, op_context.input->type != kTfLiteString);
 
-  if (IsConstantTensor(op_context.shape)) {
+  if (IsConstantOrPersistentTensor(op_context.shape)) {
     return ResizeOutputTensor(context, &op_context);
   }
 

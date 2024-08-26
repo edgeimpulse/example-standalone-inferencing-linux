@@ -12,14 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/shim/test_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/test_util.h"
 
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/string_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/string_util.h"
 
 namespace tflite {
 

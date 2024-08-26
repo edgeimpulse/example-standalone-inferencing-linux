@@ -19,12 +19,12 @@ limitations under the License.
 #include <string>
 #include <utility>
 
-#include "tensorflow/lite/c/builtin_op_data.h"
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/core/subgraph.h"
-#include "tensorflow/lite/experimental/resource/resource_variable.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/builtin_op_data.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/core/subgraph.h"
+#include "tensorflow-lite/tensorflow/lite/experimental/resource/resource_variable.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -58,6 +58,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TfLiteTensor* output;
   TF_LITE_ENSURE_OK(context, GetOutputSafe(context, node, 0, &output));
 
+  output->allocation_type = kTfLiteArenaRwPersistent;
   const int kBytesRequired = sizeof(int32_t);
   TfLiteTensorRealloc(kBytesRequired, output);
   output->bytes = kBytesRequired;

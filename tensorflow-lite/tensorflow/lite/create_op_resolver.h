@@ -1,4 +1,4 @@
-/* Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+/* Copyright 2021 The TensorFlow Authors. All Rights Reserved.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_CREATE_OP_RESOLVER_H_
 #define TENSORFLOW_LITE_CREATE_OP_RESOLVER_H_
 
+/// For documentation, see third_party/tensorflow/lite/core/create_op_resolver.h
+
 #include <memory>
 
-#include "tensorflow/lite/mutable_op_resolver.h"
-#include "tensorflow/lite/op_resolver.h"
+#include "tensorflow-lite/tensorflow/lite/core/create_op_resolver.h"  // IWYU pragma: export
 
 namespace tflite {
-
-std::unique_ptr<MutableOpResolver> CreateOpResolver();
-}
+using ::tflite::CreateOpResolver;
+}  // namespace tflite
 
 #endif  // TENSORFLOW_LITE_CREATE_OP_RESOLVER_H_

@@ -15,7 +15,9 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_INTEGER_OPS_L2NORMALIZATION_H_
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_INTEGER_OPS_L2NORMALIZATION_H_
 
-#include "tensorflow/lite/kernels/internal/common.h"
+#include <algorithm>
+
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/common.h"
 
 namespace tflite {
 namespace reference_integer_ops {

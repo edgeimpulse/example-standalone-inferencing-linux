@@ -15,11 +15,11 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_STRING_COMPARISONS_H_
 #define TENSORFLOW_LITE_KERNELS_INTERNAL_REFERENCE_STRING_COMPARISONS_H_
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/common.h"
-#include "tensorflow/lite/kernels/internal/reference/comparisons.h"
-#include "tensorflow/lite/kernels/internal/types.h"
-#include "tensorflow/lite/string_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/comparisons.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/string_util.h"
 
 namespace tflite {
 

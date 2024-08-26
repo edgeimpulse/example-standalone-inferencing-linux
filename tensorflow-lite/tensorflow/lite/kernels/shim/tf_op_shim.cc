@@ -12,33 +12,31 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/shim/tf_op_shim.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tf_op_shim.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "tensorflow/core/framework/attr_value.pb.h"
-#include "tensorflow/core/framework/node_def.pb.h"
-#include "tensorflow/core/protobuf/error_codes.pb.h"
-#include "tensorflow/lite/kernels/shim/status_macros.h"
-#include "tensorflow/lite/kernels/shim/tensor_view.h"
+#include "tensorflow-lite/tensorflow/core/framework/attr_value.pb.h"
+#include "tensorflow-lite/tensorflow/core/framework/node_def.pb.h"
+#include "tensorflow-lite/tensorflow/core/protobuf/error_codes.pb.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/status_macros.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tensor_view.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tf_tensor_view.h"
 
 namespace tflite {
 namespace shim {
 
-TfInitContext::TfInitContext(const ::tensorflow::OpKernelConstruction* context)
-    : context_(context) {}
-
-absl::StatusOr<InitContext<TfInitContext>::AttrValue> TfInitContext::GetAttr(
-    const std::string& attr_name) const {
-  if (!context_->HasAttr(attr_name))
-    return absl::InvalidArgumentError(
-        absl::StrCat("Non-existent attribute: ", attr_name, "\nop def:\n",
-                     context_->def().DebugString()));
+namespace {
+// Converts a TF AttrValue into a TF Shim AttrValue
+absl::StatusOr<AttrValue> TfAttrValueToShimAttrValue(
+    const ::tensorflow::AttrValue& attr_value) {
   AttrValue ret;
-  const auto attr_value = context_->def().attr().at(attr_name);
   switch (attr_value.value_case()) {
     case ::tensorflow::AttrValue::kB: {
       ret = attr_value.b();
@@ -63,6 +61,20 @@ absl::StatusOr<InitContext<TfInitContext>::AttrValue> TfInitContext::GetAttr(
   }
   return ret;
 }
+}  // namespace
+
+TfInitContext::TfInitContext(const ::tensorflow::OpKernelConstruction* context)
+    : context_(context) {}
+
+absl::StatusOr<AttrValue> TfInitContext::GetAttr(
+    const std::string& attr_name) const {
+  if (!context_->HasAttr(attr_name))
+    return absl::InvalidArgumentError(
+        absl::StrCat("Non-existent attribute: ", attr_name, "\nop def:\n",
+                     context_->def().DebugString()));
+  const auto& attr_value = context_->def().attr().at(attr_name);
+  return TfAttrValueToShimAttrValue(attr_value);
+}
 
 TfInvokeContext::TfInvokeContext(::tensorflow::OpKernelContext* context)
     : context_(context) {}
@@ -76,7 +88,7 @@ ConstTensorViewOr TfInvokeContext::GetInput(const int idx) const {
   const auto tf_tensor = context_->input(idx);
   SH_ASSIGN_OR_RETURN(const TfTensorView& tensor_view,
                       TensorView::New(&tf_tensor));
-  return absl::make_unique<const TfTensorView>(tensor_view);
+  return std::make_unique<const TfTensorView>(tensor_view);
 }
 
 TensorViewOr TfInvokeContext::GetOutput(const int idx,
@@ -88,11 +100,15 @@ TensorViewOr TfInvokeContext::GetOutput(const int idx,
   for (int i = 0; i < shape->size(); ++i) shape_64[i] = (*shape)[i];
   auto status = context_->allocate_output(
       idx, ::tensorflow::TensorShape(shape_64), &output_t);
-  if (!status.ok()) return ToAbslStatus(status);
+  if (!status.ok()) return status;
   SH_ASSIGN_OR_RETURN(const TfTensorView& tensor_view,
                       TensorView::New(output_t));
-  return absl::make_unique<TfTensorView>(tensor_view);
+  return std::make_unique<TfTensorView>(std::move(tensor_view));
 }
+
+int TfInvokeContext::NumInputs() const { return context_->num_inputs(); }
+
+int TfInvokeContext::NumOutputs() const { return context_->num_outputs(); }
 
 TfShapeInferenceContext::TfShapeInferenceContext(
     ::tensorflow::shape_inference::InferenceContext* context)
@@ -132,19 +148,24 @@ ConstTensorViewOr TfShapeInferenceContext::GetInputTensor(const int idx) const {
   }
   SH_ASSIGN_OR_RETURN(const TfTensorView& tensor_view,
                       TensorView::New(tf_tensor));
-  return absl::make_unique<const TfTensorView>(tensor_view);
+  return std::make_unique<const TfTensorView>(tensor_view);
 }
 
-::tensorflow::Status FromAbslStatus(const absl::Status& s) {
-  if (s.ok()) return ::tensorflow::Status();
-  return ::tensorflow::Status(static_cast<::tensorflow::error::Code>(s.code()),
-                              s.message());
+absl::StatusOr<AttrValue> TfShapeInferenceContext::GetAttr(
+    const std::string& attr_name) const {
+  const auto* tf_attr_value = context_->GetAttr(attr_name);
+  if (tf_attr_value == nullptr)
+    return absl::InvalidArgumentError(
+        absl::StrCat("Non-existent attribute: ", attr_name));
+  return TfAttrValueToShimAttrValue(*tf_attr_value);
 }
 
-absl::Status ToAbslStatus(const ::tensorflow::Status& s) {
-  return s.ok() ? absl::OkStatus()
-                : absl::Status(static_cast<absl::StatusCode>(s.code()),
-                               s.error_message());
+int TfShapeInferenceContext::NumInputs() const {
+  return context_->num_inputs();
+}
+
+int TfShapeInferenceContext::NumOutputs() const {
+  return context_->num_outputs();
 }
 
 }  // namespace shim

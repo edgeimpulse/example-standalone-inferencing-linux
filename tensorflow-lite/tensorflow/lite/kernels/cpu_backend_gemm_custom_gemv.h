@@ -39,12 +39,12 @@ limitations under the License.
 #include <vector>
 
 #include "ruy/profiler/instrumentation.h"  // from @ruy
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_params.h"
-#include "tensorflow/lite/kernels/cpu_backend_threadpool.h"
-#include "tensorflow/lite/kernels/internal/common.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/internal/optimized/neon_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_params.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_threadpool.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_check.h"
 
 namespace tflite {
 namespace cpu_backend_gemm {

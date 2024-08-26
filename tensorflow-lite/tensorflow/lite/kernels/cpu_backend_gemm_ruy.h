@@ -19,9 +19,9 @@ limitations under the License.
 #include "ruy/matrix.h"  // from @ruy
 #include "ruy/mul_params.h"  // from @ruy
 #include "ruy/ruy.h"  // from @ruy
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_params.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_params.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
 
 namespace tflite {
 namespace cpu_backend_gemm {

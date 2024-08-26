@@ -12,15 +12,16 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
+#include <algorithm>
 #include <vector>
 
-#include "flatbuffers/flexbuffers.h"  // from @flatbuffers
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/ctc/ctc_beam_search.h"
-#include "tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
-#include "tensorflow/lite/kernels/op_macros.h"
+#include "tensorflow-lite/flatbuffers/flexbuffers.h"  // from @flatbuffers
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/ctc/ctc_beam_search.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/op_macros.h"
 
 namespace tflite {
 namespace ops {

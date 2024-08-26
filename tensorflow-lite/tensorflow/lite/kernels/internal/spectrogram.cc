@@ -13,10 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/kernels/internal/spectrogram.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/spectrogram.h"
 
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 
 #include "third_party/fft2d/fft.h"
 

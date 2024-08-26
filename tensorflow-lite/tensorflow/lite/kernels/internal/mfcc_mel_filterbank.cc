@@ -28,7 +28,7 @@ limitations under the License.
 // channels may end up with no contributing FFT bins.  The resulting mel
 // spectrum output will have some channels that are always zero.
 
-#include "tensorflow/lite/kernels/internal/mfcc_mel_filterbank.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc_mel_filterbank.h"
 
 #include <math.h>
 

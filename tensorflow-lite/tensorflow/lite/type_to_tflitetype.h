@@ -18,12 +18,12 @@ limitations under the License.
 #include <complex>
 #include <string>
 
-#include "tensorflow/lite/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
 
 // Most of the definitions have been moved to this subheader so that Micro
 // can include it without relying on <string> and <complex>, which isn't
 // available on all platforms.
-#include "tensorflow/lite/portable_type_to_tflitetype.h"
+#include "tensorflow-lite/tensorflow/lite/portable_type_to_tflitetype.h"
 
 namespace tflite {
 

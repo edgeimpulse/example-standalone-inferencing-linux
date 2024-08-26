@@ -14,11 +14,11 @@ limitations under the License.
 ==============================================================================*/
 #include <stdint.h>
 
-#include "tensorflow/lite/c/builtin_op_data.h"
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/builtin_op_data.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -157,7 +157,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_TYPES_EQ(context, op_context.off_value->type,
                           op_context.dtype);
 
-  if (!IsConstantTensor(op_context.depth)) {
+  if (!IsConstantOrPersistentTensor(op_context.depth)) {
     SetTensorToDynamic(op_context.output);
     return kTfLiteOk;
   }
@@ -169,7 +169,7 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   OneHotContext op_context{context, node};
 
   if (IsDynamicTensor(op_context.output)) {
-    ResizeOutputTensor(context, op_context);
+    TF_LITE_ENSURE_OK(context, ResizeOutputTensor(context, op_context));
   }
 
   switch (op_context.output->type) {

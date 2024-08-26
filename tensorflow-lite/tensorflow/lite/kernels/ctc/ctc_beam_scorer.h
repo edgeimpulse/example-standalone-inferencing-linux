@@ -26,7 +26,7 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_CTC_CTC_BEAM_SCORER_H_
 #define TENSORFLOW_LITE_KERNELS_CTC_CTC_BEAM_SCORER_H_
 
-#include "tensorflow/lite/kernels/ctc/ctc_beam_entry.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/ctc/ctc_beam_entry.h"
 
 namespace tflite {
 namespace custom {

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/kernels/internal/optimized/cpu_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/cpu_check.h"
 
 #if defined __linux__ && defined __aarch64__
 #include <sys/auxv.h>

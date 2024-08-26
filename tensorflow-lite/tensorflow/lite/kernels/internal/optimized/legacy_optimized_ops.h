@@ -18,16 +18,18 @@ limitations under the License.
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <algorithm>
+
 #include "public/gemmlowp.h"
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/internal/optimized/cpu_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/depthwiseconv_multithread.h"
-#include "tensorflow/lite/kernels/internal/optimized/integer_ops/depthwise_conv.h"
-#include "tensorflow/lite/kernels/internal/optimized/integer_ops/fully_connected.h"
-#include "tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
-#include "tensorflow/lite/kernels/internal/optimized/resize_bilinear.h"
-#include "tensorflow/lite/kernels/internal/reference/legacy_reference_ops.h"
-#include "tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/cpu_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/depthwiseconv_multithread.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/integer_ops/depthwise_conv.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/integer_ops/fully_connected.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/resize_bilinear.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/legacy_reference_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
 
 namespace tflite {
 namespace optimized_ops {

@@ -12,20 +12,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/profiling/platform_profiler.h"
+#include "tensorflow-lite/tensorflow/lite/profiling/platform_profiler.h"
 
 #include <memory>
 
-#include "tensorflow/lite/core/api/profiler.h"
+#include "tensorflow-lite/tensorflow/lite/core/api/profiler.h"
 
 #if defined(__ANDROID__)
-#include "tensorflow/lite/profiling/atrace_profiler.h"
+#include "tensorflow-lite/tensorflow/lite/profiling/atrace_profiler.h"
 #elif defined(__APPLE__)
 #include "TargetConditionals.h"
 #if TARGET_OS_IOS
 #define SIGNPOST_PLATFORM_PROFILER
-#include "tensorflow/lite/profiling/signpost_profiler.h"
+#include "tensorflow-lite/tensorflow/lite/profiling/signpost_profiler.h"
 #endif
+#elif defined(ENABLE_TFLITE_PERFETTO_PROFILER)
+#include "tensorflow-lite/tensorflow/lite/experimental/perfetto_profiling/perfetto_profiler.h"
 #endif
 
 namespace tflite {
@@ -36,6 +38,8 @@ std::unique_ptr<tflite::Profiler> MaybeCreatePlatformProfiler() {
   return MaybeCreateATraceProfiler();
 #elif defined(SIGNPOST_PLATFORM_PROFILER)
   return MaybeCreateSignpostProfiler();
+#elif defined(ENABLE_TFLITE_PERFETTO_PROFILER)
+  return std::make_unique<tflite::profiling::PerfettoProfiler>();
 #else
   return nullptr;
 #endif

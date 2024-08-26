@@ -13,10 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/experimental/resource/static_hashtable.h"
+#include "tensorflow-lite/tensorflow/lite/experimental/resource/static_hashtable.h"
 
 #include <memory>
-#include "tensorflow/lite/experimental/resource/lookup_interfaces.h"
+#include <string>
+
+#include "tensorflow-lite/tensorflow/lite/experimental/resource/lookup_interfaces.h"
 
 namespace tflite {
 namespace resource {
@@ -27,8 +29,8 @@ TfLiteStatus StaticHashtable<KeyType, ValueType>::Lookup(
     TfLiteContext* context, const TfLiteTensor* keys, TfLiteTensor* values,
     const TfLiteTensor* default_value) {
   if (!is_initialized_) {
-    context->ReportError(context,
-                         "hashtable need to be initialized before using");
+    TF_LITE_KERNEL_LOG(context,
+                       "hashtable need to be initialized before using");
     return kTfLiteError;
   }
   const int size =

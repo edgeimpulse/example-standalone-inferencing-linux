@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/kernels/internal/mfcc_dct.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc_dct.h"
 
 #include <math.h>
 

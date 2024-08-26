@@ -20,16 +20,16 @@ limitations under the License.
 #include <algorithm>
 
 #include "ruy/profiler/instrumentation.h"  // from @ruy
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/internal/cppmath.h"
-#include "tensorflow/lite/kernels/internal/optimized/cpu_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/im2col_utils.h"
-#include "tensorflow/lite/kernels/internal/optimized/neon_check.h"
-#include "tensorflow/lite/kernels/internal/quantization_util.h"
-#include "tensorflow/lite/kernels/internal/reference/reference_ops.h"
-#include "tensorflow/lite/kernels/internal/strided_slice_logic.h"
-#include "tensorflow/lite/kernels/internal/tensor_utils.h"
-#include "tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/cppmath.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/cpu_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/im2col_utils.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/quantization_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/reference_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/strided_slice_logic.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_utils.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
 
 namespace tflite {
 namespace optimized_integer_ops {
