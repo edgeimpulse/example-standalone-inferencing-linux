@@ -12,23 +12,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/internal/mfcc.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc.h"
 
 #include <stddef.h>
 #include <stdint.h>
 
 #include <vector>
 
-#include "flatbuffers/flexbuffers.h"  // from @flatbuffers
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/internal/mfcc_dct.h"
-#include "tensorflow/lite/kernels/internal/mfcc_mel_filterbank.h"
-#include "tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
-#include "tensorflow/lite/kernels/internal/reference/reference_ops.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/flatbuffers/flexbuffers.h"  // from @flatbuffers
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc_dct.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc_mel_filterbank.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/reference_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {

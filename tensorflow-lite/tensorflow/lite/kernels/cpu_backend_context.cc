@@ -13,9 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
 
 #include <memory>
+
+#include "pthreadpool.h"  // from @pthreadpool
 
 #ifdef TFLITE_HAVE_CPUINFO
 #include "include/cpuinfo.h"
@@ -24,11 +26,11 @@ limitations under the License.
 #include "public/gemmlowp.h"
 #include "ruy/context.h"  // from @ruy
 #include "ruy/path.h"  // from @ruy
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/core/macros.h"
-#include "tensorflow/lite/external_cpu_backend_context.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/op_macros.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/core/macros.h"
+#include "tensorflow-lite/tensorflow/lite/external_cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/op_macros.h"
 
 namespace {
 const int kDefaultNumThreadpoolThreads = 1;
@@ -42,8 +44,7 @@ namespace tflite {
 extern TFLITE_ATTRIBUTE_WEAK bool UseGemmlowpOnX86();
 #endif  // defined(TFLITE_HAS_ATTRIBUTE_WEAK) && !(__APPLE__)
 
-// TODO(b/138922878) Enable when Ruy builds on Apple.
-#if defined(TFLITE_HAVE_CPUINFO) && !defined(__APPLE__)
+#if defined(TFLITE_HAVE_CPUINFO)
 CpuBackendContext::CpuInfo::~CpuInfo() {
   if (init_status_ == InitStatus::kInitialized) {
     cpuinfo_deinitialize();
@@ -147,6 +148,14 @@ void CpuBackendContext::SetMaxNumThreads(int max_num_threads) {
 }
 
 void CpuBackendContext::SetUseCaching(bool flag) { use_caching_ = flag; }
+
+pthreadpool_t CpuBackendContext::get_xnnpack_threadpool() {
+  if (!xnnpack_threadpool_ && max_num_threads_ > 1) {
+    xnnpack_threadpool_.reset(
+        pthreadpool_create(static_cast<size_t>(max_num_threads_)));
+  }
+  return xnnpack_threadpool_.get();
+}
 
 bool CpuBackendContext::PreferGemmlowpOnX86() {
   bool use_gemmlowp_on_x86 = false;

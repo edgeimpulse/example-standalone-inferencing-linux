@@ -16,9 +16,9 @@ limitations under the License.
 #include <cmath>
 #include <random>
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -55,7 +55,7 @@ void Free(TfLiteContext* context, void* buffer) {
 }
 
 TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
-  // TODO(b/111309333): Handle optional seed input.
+  // The seed/seed2 attributes are not handled in this custom op implementation.
   TF_LITE_ENSURE(context, NumInputs(node) == 1);
   TF_LITE_ENSURE_EQ(context, NumOutputs(node), 1);
 
@@ -63,7 +63,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_EQ(context, shape->type, kTfLiteInt32);
   TF_LITE_ENSURE_EQ(context, NumDimensions(shape), 1);
   TfLiteTensor* output = GetOutput(context, node, kOutputTensor);
-  if (!IsConstantTensor(shape)) {
+  if (!IsConstantOrPersistentTensor(shape)) {
     SetTensorToDynamic(output);
     return kTfLiteOk;
   }

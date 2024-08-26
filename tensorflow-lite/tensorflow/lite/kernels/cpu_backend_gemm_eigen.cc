@@ -15,7 +15,7 @@ limitations under the License.
 
 #ifndef TFLITE_WITH_RUY
 
-#include "tensorflow/lite/kernels/cpu_backend_gemm_eigen.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_eigen.h"
 
 // See b/131835803: in TFLite code, because eigen_spatial_convolutions.h does
 // #define Eigen EigenForTFLite, it is difficult to have any #include of Eigen
@@ -23,10 +23,10 @@ limitations under the License.
 // errors) depending on the order in which these headers are #included.
 // So we have moved the #include of Eigen here, in a .cc file, where we have
 // control over the header #include sequence.
-#include "third_party/eigen3/Eigen/Core"
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_params.h"
-#include "tensorflow/lite/kernels/internal/common.h"
+#include "Eigen/Core"  // from @eigen_archive
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_params.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/common.h"
 
 namespace tflite {
 namespace cpu_backend_gemm {

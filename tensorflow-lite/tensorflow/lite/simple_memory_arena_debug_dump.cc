@@ -15,11 +15,12 @@ limitations under the License.
 #include <algorithm>
 #include <cstdio>
 #include <functional>
+#include <limits>
 #include <queue>
 #include <string>
 #include <vector>
 
-#include "tensorflow/lite/simple_memory_arena.h"
+#include "tensorflow-lite/tensorflow/lite/simple_memory_arena.h"
 
 namespace tflite {
 namespace {

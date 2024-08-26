@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/shim/shape.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/shape.h"
 
 #include <string>
 
@@ -28,6 +28,8 @@ bool Shape::operator==(const Shape& rhs) const {
       return false;
   return true;
 }
+
+bool Shape::operator!=(const Shape& rhs) const { return !(*this == rhs); }
 
 bool Shape::Compatible(const Shape& rhs) const {
   if (!has_value() || !rhs.has_value()) return true;

@@ -24,13 +24,13 @@ limitations under the License.
 #include <memory>
 #include <vector>
 
-#include "third_party/eigen3/Eigen/Core"
-#include "tensorflow/lite/kernels/ctc/ctc_beam_entry.h"
-#include "tensorflow/lite/kernels/ctc/ctc_beam_scorer.h"
-#include "tensorflow/lite/kernels/ctc/ctc_decoder.h"
-#include "tensorflow/lite/kernels/ctc/ctc_loss_util.h"
-#include "tensorflow/lite/kernels/ctc/top_n.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
+#include "Eigen/Core"  // from @eigen_archive
+#include "tensorflow-lite/tensorflow/lite/kernels/ctc/ctc_beam_entry.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/ctc/ctc_beam_scorer.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/ctc/ctc_decoder.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/ctc/ctc_loss_util.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/ctc/top_n.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
 
 namespace tflite {
 namespace custom {
@@ -104,7 +104,7 @@ class CTCBeamSearchDecoder : public CTCDecoder {
 
   // Calculate the next step of the beam search and update the internal state.
   template <typename Vector>
-  void Step(const Vector& log_input_t);
+  void Step(const Vector& raw_input);
 
   template <typename Vector>
   float GetTopK(const int K, const Vector& input,

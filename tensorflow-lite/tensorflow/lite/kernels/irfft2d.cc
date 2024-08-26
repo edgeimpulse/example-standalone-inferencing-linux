@@ -23,11 +23,11 @@ limitations under the License.
 
 #include "third_party/fft2d/fft2d.h"
 #include "ruy/profiler/instrumentation.h"  // from @ruy
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/internal/types.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -207,7 +207,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   // Exit early if fft_length is a non-const tensor. Set output tensor and
   // temporary tensors to dynamic, so that their tensor sizes can be determined
   // in Eval.
-  if (!IsConstantTensor(fft_length)) {
+  if (!IsConstantOrPersistentTensor(fft_length)) {
     TfLiteTensor* fft_integer_working_area;
     TF_LITE_ENSURE_OK(
         context, GetTemporarySafe(context, node, kFftIntegerWorkingAreaTensor,

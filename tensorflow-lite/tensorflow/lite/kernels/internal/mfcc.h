@@ -20,8 +20,8 @@ limitations under the License.
 
 #include <vector>
 
-#include "tensorflow/lite/kernels/internal/mfcc_dct.h"
-#include "tensorflow/lite/kernels/internal/mfcc_mel_filterbank.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc_dct.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc_mel_filterbank.h"
 
 namespace tflite {
 namespace internal {

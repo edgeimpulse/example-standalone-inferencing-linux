@@ -16,7 +16,7 @@ limitations under the License.
 #ifndef TENSORFLOW_LITE_KERNELS_PERCEPTION_PERCEPTION_OPS_H_
 #define TENSORFLOW_LITE_KERNELS_PERCEPTION_PERCEPTION_OPS_H_
 
-#include "tensorflow/lite/mutable_op_resolver.h"
+#include "tensorflow-lite/tensorflow/lite/mutable_op_resolver.h"
 
 namespace tflite {
 namespace ops {

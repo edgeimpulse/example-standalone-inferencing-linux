@@ -12,11 +12,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/shim/test_op/simple_tflite_op.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/test_op/simple_tflite_op.h"
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/shim/test_op/simple_op.h"
-#include "tensorflow/lite/kernels/shim/tflite_op_shim.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/test_op/simple_op.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tflite_op_shim.h"
 
 namespace tflite {
 namespace ops {

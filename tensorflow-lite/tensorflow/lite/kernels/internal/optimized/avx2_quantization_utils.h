@@ -21,7 +21,7 @@ limitations under the License.
 
 #include <limits>
 
-#include "tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
 
 namespace tflite {
 namespace avx2_utils {

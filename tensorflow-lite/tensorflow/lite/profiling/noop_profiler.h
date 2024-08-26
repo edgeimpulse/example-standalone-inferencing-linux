@@ -17,8 +17,8 @@ limitations under the License.
 
 #include <vector>
 
-#include "tensorflow/lite/core/api/profiler.h"
-#include "tensorflow/lite/profiling/profile_buffer.h"
+#include "tensorflow-lite/tensorflow/lite/core/api/profiler.h"
+#include "tensorflow-lite/tensorflow/lite/profiling/profile_buffer.h"
 
 namespace tflite {
 namespace profiling {

@@ -13,20 +13,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
-#ifndef TENSORFLOW_LITE_KERNELS_CPU_BACKEND_X86_H_
-#define TENSORFLOW_LITE_KERNELS_CPU_BACKEND_X86_H_
+#ifndef TENSORFLOW_LITE_KERNELS_CPU_BACKEND_GEMM_X86_H_
+#define TENSORFLOW_LITE_KERNELS_CPU_BACKEND_GEMM_X86_H_
 
 // If TFLITE_WITH_RUY is set, Ruy is the only GEMM option. In this header
 // we select either Ruy or an alternative based on the SIMD extentions
 // available on the given x86 platform.
 #ifndef TFLITE_WITH_RUY
 
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_eigen.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_gemmlowp.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_params.h"
-#include "tensorflow/lite/kernels/cpu_backend_gemm_ruy.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_eigen.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_gemmlowp.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_params.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_gemm_ruy.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
 
 namespace tflite {
 namespace cpu_backend_gemm {
@@ -103,4 +103,4 @@ struct GemmImplX86<std::int8_t, std::int8_t, std::int32_t, std::int8_t,
 
 #endif  // not TFLITE_WITH_RUY
 
-#endif  // TENSORFLOW_LITE_KERNELS_CPU_BACKEND_X86_H_
+#endif  // TENSORFLOW_LITE_KERNELS_CPU_BACKEND_GEMM_X86_H_

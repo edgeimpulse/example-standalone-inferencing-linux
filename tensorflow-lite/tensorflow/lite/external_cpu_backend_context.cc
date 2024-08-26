@@ -12,9 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/external_cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/external_cpu_backend_context.h"
 
-#include "tensorflow/lite/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
 
 namespace tflite {
 namespace {

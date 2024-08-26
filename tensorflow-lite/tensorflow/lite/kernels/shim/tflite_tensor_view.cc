@@ -12,17 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/shim/tflite_tensor_view.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tflite_tensor_view.h"
 
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/shim/tensor_view.h"
-#include "tensorflow/lite/string_util.h"
-#include "tensorflow/lite/type_to_tflitetype.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tensor_view.h"
+#include "tensorflow-lite/tensorflow/lite/string_util.h"
+#include "tensorflow-lite/tensorflow/lite/type_to_tflitetype.h"
 
 // Creates a case statement for the switch() clause given the dtype
 #define CASE_FOR_DTYPE_GIVEN_CPP_DTYPE(TFLITE_DTYPE, CPP_DTYPE) \
@@ -62,9 +62,6 @@ TfLiteTensorView::TfLiteTensorView(TfLiteTensorView &&o) noexcept
       wrapped_tensor_(o.wrapped_tensor_),
       const_wrapped_tensor_(o.const_wrapped_tensor_),
       str_vec_(std::move(o.str_vec_)) {
-  if (absl::holds_alternative<absl::Span<::tensorflow::tstring>>(data_)) {
-    InitForStringDType();
-  }
 }
 
 TfLiteTensorView::TfLiteTensorView(const TfLiteTensorView &o)
@@ -72,9 +69,6 @@ TfLiteTensorView::TfLiteTensorView(const TfLiteTensorView &o)
       wrapped_tensor_(o.wrapped_tensor_),
       const_wrapped_tensor_(o.const_wrapped_tensor_),
       str_vec_(o.str_vec_) {
-  if (absl::holds_alternative<absl::Span<::tensorflow::tstring>>(data_)) {
-    InitForStringDType();
-  }
 }
 
 TfLiteTensorView &TfLiteTensorView::operator=(TfLiteTensorView &&o) noexcept {
@@ -82,9 +76,6 @@ TfLiteTensorView &TfLiteTensorView::operator=(TfLiteTensorView &&o) noexcept {
   const_wrapped_tensor_ = o.const_wrapped_tensor_;
   str_vec_ = std::move(o.str_vec_);
   TensorView::operator=(std::move(o));
-  if (absl::holds_alternative<absl::Span<::tensorflow::tstring>>(data_)) {
-    InitForStringDType();
-  }
   return *this;
 }
 
@@ -94,9 +85,6 @@ TfLiteTensorView &TfLiteTensorView::operator=(const TfLiteTensorView &o) {
   wrapped_tensor_ = o.wrapped_tensor_;
   const_wrapped_tensor_ = o.const_wrapped_tensor_;
   str_vec_ = o.str_vec_;
-  if (absl::holds_alternative<absl::Span<::tensorflow::tstring>>(data_)) {
-    InitForStringDType();
-  }
   return *this;
 }
 
@@ -124,8 +112,7 @@ TfLiteTensorView::StringBuffer::StringBuffer(TfLiteTensorView *t_view)
 }
 
 TfLiteTensorView::StringBuffer::~StringBuffer() {
-  if (wrapped_tensor == nullptr || buffer.empty()) return;
-  VLOG(2) << "Flushing: " << buffer.data();
+  if (wrapped_tensor == nullptr) return;
   tflite::DynamicBuffer buf;
   for (const auto &s : buffer) buf.AddString(s.data(), s.length());
   buf.WriteToTensor(wrapped_tensor, /*new_shape=*/nullptr);

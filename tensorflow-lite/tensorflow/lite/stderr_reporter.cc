@@ -12,12 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/stderr_reporter.h"
+#include "tensorflow-lite/tensorflow/lite/stderr_reporter.h"
 
 #include <stdarg.h>
 
-#include "tensorflow/lite/core/api/error_reporter.h"
-#include "tensorflow/lite/minimal_logging.h"
+#include "tensorflow-lite/tensorflow/lite/core/api/error_reporter.h"
+#include "tensorflow-lite/tensorflow/lite/minimal_logging.h"
 
 namespace tflite {
 

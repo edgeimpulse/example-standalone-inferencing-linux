@@ -12,15 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/internal/reference/densify.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/densify.h"
 
 #include <stddef.h>
 
 #include <cstdint>
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -61,6 +61,7 @@ TfLiteStatus Prepare(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE(context, op_context.input->sparsity != nullptr);
 
   op_context.output->type = op_context.input->type;
+  op_context.output->name = "Densify_output";
   op_context.output->allocation_type = kTfLiteArenaRwPersistent;
 
   return context->ResizeTensor(context, op_context.output,
@@ -98,8 +99,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       break;
 
     default:
-      context->ReportError(context, "Type %d not supported.",
-                           op_context.input->type);
+      TF_LITE_KERNEL_LOG(context, "Type %d not supported.",
+                         op_context.input->type);
       return kTfLiteError;
   }
 

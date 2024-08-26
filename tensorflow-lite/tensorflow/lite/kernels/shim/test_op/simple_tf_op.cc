@@ -12,15 +12,15 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/shim/test_op/simple_tf_op.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/test_op/simple_tf_op.h"
 
-#include "tensorflow/core/framework/op_kernel.h"
-#include "tensorflow/core/framework/types.h"
+#include "tensorflow-lite/tensorflow/core/framework/op_kernel.h"
+#include "tensorflow-lite/tensorflow/core/framework/types.h"
 
 namespace tflite {
 namespace shim {
 
-REGISTER_TF_OP_SHIM("SimpleOperation", SimpleOpKernel);
+REGISTER_TF_OP_SHIM(SimpleOpKernel);
 
 REGISTER_KERNEL_BUILDER(
     Name(SimpleOpKernel::OpName()).Device(::tensorflow::DEVICE_CPU),

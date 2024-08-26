@@ -15,7 +15,7 @@ limitations under the License.
 
 #include <math.h>
 
-#include "tensorflow/lite/kernels/internal/mfcc.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/mfcc.h"
 
 namespace tflite {
 namespace internal {

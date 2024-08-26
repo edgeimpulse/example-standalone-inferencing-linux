@@ -15,7 +15,7 @@ limitations under the License.
 
 #include <cassert>
 
-#include "tensorflow/lite/allocation.h"
+#include "tensorflow-lite/tensorflow/lite/allocation.h"
 
 namespace tflite {
 
@@ -24,6 +24,10 @@ MMAPAllocation::MMAPAllocation(const char* filename,
     : MMAPAllocation(error_reporter, -1) {}
 
 MMAPAllocation::MMAPAllocation(int fd, ErrorReporter* error_reporter)
+    : MMAPAllocation(error_reporter, -1) {}
+
+MMAPAllocation::MMAPAllocation(int fd, size_t offset, size_t length,
+                               ErrorReporter* error_reporter)
     : MMAPAllocation(error_reporter, -1) {}
 
 MMAPAllocation::MMAPAllocation(ErrorReporter* error_reporter, int owned_fd)

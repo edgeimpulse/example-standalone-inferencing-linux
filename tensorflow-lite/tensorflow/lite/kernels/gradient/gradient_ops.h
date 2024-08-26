@@ -18,7 +18,7 @@ limitations under the License.
 
 // This file declares the TensorFlow Lite's gradient custom operators.
 
-#include "tensorflow/lite/mutable_op_resolver.h"
+#include "tensorflow-lite/tensorflow/lite/mutable_op_resolver.h"
 
 namespace tflite {
 namespace ops {

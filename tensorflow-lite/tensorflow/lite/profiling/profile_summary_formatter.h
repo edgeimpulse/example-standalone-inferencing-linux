@@ -16,13 +16,14 @@ limitations under the License.
 #define TENSORFLOW_LITE_PROFILING_PROFILE_SUMMARY_FORMATTER_H_
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "tensorflow/core/util/stats_calculator.h"
+#include "tensorflow-lite/tensorflow/core/util/stats_calculator.h"
 
 namespace tflite {
 namespace profiling {

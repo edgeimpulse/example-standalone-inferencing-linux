@@ -15,11 +15,11 @@ limitations under the License.
 
 #include <limits>
 
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/gru_cell.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/gru_cell.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 // Unidirectional_sequence_gru is the fused version of GRU:
 // https://www.tensorflow.org/api_docs/python/tf/keras/layers/GRU.

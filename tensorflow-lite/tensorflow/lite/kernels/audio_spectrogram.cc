@@ -19,14 +19,14 @@ limitations under the License.
 
 #include <vector>
 
-#include "flatbuffers/flexbuffers.h"  // from @flatbuffers
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
-#include "tensorflow/lite/kernels/internal/reference/reference_ops.h"
-#include "tensorflow/lite/kernels/internal/spectrogram.h"
-#include "tensorflow/lite/kernels/internal/tensor.h"
-#include "tensorflow/lite/kernels/internal/tensor_ctypes.h"
-#include "tensorflow/lite/kernels/kernel_util.h"
+#include "tensorflow-lite/flatbuffers/flexbuffers.h"  // from @flatbuffers
+#include "tensorflow-lite/tensorflow/lite/core/c/common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/reference_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/spectrogram.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/tensor_ctypes.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 
 namespace tflite {
 namespace ops {
@@ -115,9 +115,6 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
   TF_LITE_ENSURE_OK(context,
                     GetOutputSafe(context, node, kOutputTensor, &output));
 
-  TF_LITE_ENSURE(context, params->spectrogram->Initialize(params->window_size,
-                                                          params->stride));
-
   const float* input_data = GetTensorData<float>(input);
 
   const int64_t sample_count = input->dims->data[0];
@@ -135,6 +132,8 @@ TfLiteStatus Eval(TfLiteContext* context, TfLiteNode* node) {
       input_for_channel[i] = input_data[i * channel_count + channel];
     }
     std::vector<std::vector<float>> spectrogram_output;
+    TF_LITE_ENSURE(context, params->spectrogram->Initialize(params->window_size,
+                                                            params->stride));
     TF_LITE_ENSURE(context,
                    params->spectrogram->ComputeSquaredMagnitudeSpectrogram(
                        input_for_channel, &spectrogram_output));

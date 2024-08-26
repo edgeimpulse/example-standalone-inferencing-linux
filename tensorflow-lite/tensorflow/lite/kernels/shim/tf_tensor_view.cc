@@ -12,13 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/shim/tf_tensor_view.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tf_tensor_view.h"
 
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "tensorflow/core/framework/types.pb.h"
+#include "tensorflow-lite/tensorflow/core/framework/types.pb.h"
 
 // Creates a case statement for the switch() clause given the dtype
 #define CASE_FOR_DTYPE_GIVEN_CPP_DTYPE(TF_DTYPE, CPP_DTYPE) \

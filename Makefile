@@ -83,21 +83,24 @@ CFLAGS += -Itensorflow-lite/
 CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/custom/*.cc)
 
 ifeq (${TARGET_LINUX_ARMV7},1)
-LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lflatbuffers -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo -lclog
+LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lflatbuffers -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo
 endif # TARGET_LINUX_ARMV7
 ifeq (${TARGET_LINUX_AARCH64},1)
 CFLAGS += -DDISABLEFLOAT16
-LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lclog -lpthread
+LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
 endif # TARGET_LINUX_AARCH64
 ifeq (${TARGET_LINUX_X86},1)
-LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lclog -lpthread
+LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
 endif # TARGET_LINUX_X86
 ifeq (${TARGET_MAC_X86_64},1)
-LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lclog
+LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool
 endif # TARGET_MAC_X86_64
+ifeq (${TARGET_MAC_ARM64},1)
+LDFLAGS += -L./tflite/mac-arm64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool
+endif # TARGET_MAC_ARM64
 
 ifeq (${LINK_TFLITE_FLEX_LIBRARY},1)
-LDFLAGS += -ltensorflowlite_flex_2.6.5
+LDFLAGS += -ltensorflowlite_flex_2.16.1
 endif
 
 else ifeq (${USE_AKIDA},1) # USE_FULL_TFLITE
@@ -105,7 +108,7 @@ CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES # add more detailed pybind error descriptions
 CFLAGS += -Itensorflow-lite
 CFLAGS += -Iedge-impulse-sdk/third_party/gemmlowp
-LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lclog -lpthread
+LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
 ifeq (${TARGET_LINUX_AARCH64},1)
 CFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --cflags)
 LDFLAGS += -L./tflite/linux-aarch64
@@ -125,6 +128,8 @@ CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcar
 endif # not USE_FULL_TFLITE
 
 ifeq (${USE_MEMRYX},1)
+CFLAGS += -Iedge-impulse-sdk/third_party/gemmlowp
+LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
 ifeq (${TARGET_LINUX_AARCH64},1)
 $(error MemryX drivers and runtime do not support AARCH64)
 else ifeq (${TARGET_LINUX_X86},1)
@@ -133,6 +138,7 @@ CFLAGS += $(shell python3-config --cflags)
 CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
 LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
 else
+LDFLAGS += -L./tflite/linux-x86
 LDFLAGS += -lmemx
 endif # USE_MEMRYX_SOFTWARE
 endif # USE_MEMRYX && TARGET_LINUX_X86

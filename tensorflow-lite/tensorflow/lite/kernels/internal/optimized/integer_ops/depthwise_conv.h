@@ -21,17 +21,17 @@ limitations under the License.
 #include <vector>
 
 #include "ruy/profiler/instrumentation.h"  // from @ruy
-#include "tensorflow/lite/kernels/cpu_backend_context.h"
-#include "tensorflow/lite/kernels/cpu_backend_threadpool.h"
-#include "tensorflow/lite/kernels/internal/compatibility.h"
-#include "tensorflow/lite/kernels/internal/optimized/cpu_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/depthwiseconv_3x3_filter_common.h"
-#include "tensorflow/lite/kernels/internal/optimized/depthwiseconv_uint8_3x3_filter.h"
-#include "tensorflow/lite/kernels/internal/optimized/integer_ops/depthwise_conv_3x3_filter.h"
-#include "tensorflow/lite/kernels/internal/optimized/neon_check.h"
-#include "tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
-#include "tensorflow/lite/kernels/internal/reference/depthwiseconv_uint8.h"
-#include "tensorflow/lite/kernels/internal/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_context.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/cpu_backend_threadpool.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/compatibility.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/cpu_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/depthwiseconv_3x3_filter_common.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/depthwiseconv_uint8_3x3_filter.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/integer_ops/depthwise_conv_3x3_filter.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/optimized_ops.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/reference/depthwiseconv_uint8.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/types.h"
 
 namespace tflite {
 namespace optimized_integer_ops {
@@ -1429,7 +1429,7 @@ void QuantizedDepthwiseConvAccumRow(int stride, int dilation_factor,
                                     int out_x_buffer_start,
                                     int out_x_buffer_end, int output_depth,
                                     int32* acc_buffer) {
-  ruy::profiler::ScopeLabel label(__PRETTY_FUNCTION__);
+  ruy::profiler::ScopeLabel label(TFLITE_PRETTY_FUNCTION);
   // Consistency check parameters. This is important in particular to ensure
   // that we keep the number of template instantiations minimal, so we don't
   // increase binary size unnecessarily.
@@ -1637,13 +1637,23 @@ inline void DepthwiseConvGeneral(
   const int output_width = output_shape.Dims(2);
 
   static const int kAccBufferMaxSize = 2048;
-  int32 acc_buffer[kAccBufferMaxSize];
-  TFLITE_DCHECK_GE(kAccBufferMaxSize, output_depth);
-  const int kOutputPixelsInAccBuffer = kAccBufferMaxSize / output_depth;
+  int acc_buffer_size = kAccBufferMaxSize;
+  int32 stack_acc_buffer[kAccBufferMaxSize];
+  int32* acc_buffer = stack_acc_buffer;
+#ifndef TF_LITE_STATIC_MEMORY
+  std::unique_ptr<int32[]> heap_acc_buffer;
+  if (kAccBufferMaxSize < output_depth) {
+    heap_acc_buffer.reset(new int32[output_depth]);
+    acc_buffer = heap_acc_buffer.get();
+    acc_buffer_size = output_depth;
+  }
+#endif
+  TFLITE_DCHECK_GE(acc_buffer_size, output_depth);
+  const int kOutputPixelsInAccBuffer = acc_buffer_size / output_depth;
   const int kAccBufferActualSize = kOutputPixelsInAccBuffer * output_depth;
   TFLITE_DCHECK_LE(kOutputPixelsInAccBuffer * output_depth,
                    kAccBufferActualSize);
-  TFLITE_DCHECK_LE(kAccBufferActualSize, kAccBufferMaxSize);
+  TFLITE_DCHECK_LE(kAccBufferActualSize, acc_buffer_size);
   TFLITE_DCHECK_GE(kOutputPixelsInAccBuffer, 1);
   TFLITE_DCHECK(thread_dim == 0 || thread_dim == 1);
 

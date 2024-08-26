@@ -12,8 +12,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
-#include "tensorflow/lite/kernels/internal/utils/sparsity_format_converter.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/utils/sparsity_format_converter.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <utility>
 #include <vector>
@@ -363,7 +364,7 @@ TfLiteStatus FormatConverter<T>::SparseToDense(const T* src_data,
                                                TfLiteContext* context) {
   if (dest_size != dense_size_) {
     TF_LITE_MAYBE_KERNEL_LOG(
-        context, "unexpected buffer size for densified data, expected %lld.\n",
+        context, "unexpected buffer size for densified data, expected %zu.\n",
         dense_size_);
     return kTfLiteError;
   }

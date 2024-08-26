@@ -19,7 +19,7 @@ limitations under the License.
 // number of files have been relying on it to include neon_check.h for them.
 // This should be removed, but with a global run of presubmits to catch
 // any such issues. This requires running more than just TFLite presubmits.
-#include "tensorflow/lite/kernels/internal/optimized/neon_check.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/internal/optimized/neon_check.h"
 
 namespace tflite {
 

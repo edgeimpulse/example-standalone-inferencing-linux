@@ -13,11 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 /// \file
+///
 /// Abstract interface for verifying a model.
 #ifndef TENSORFLOW_LITE_CORE_API_VERIFIER_H_
 #define TENSORFLOW_LITE_CORE_API_VERIFIER_H_
 
-#include "tensorflow/lite/core/api/error_reporter.h"
+#include "tensorflow-lite/tensorflow/lite/core/api/error_reporter.h"
 
 namespace tflite {
 
