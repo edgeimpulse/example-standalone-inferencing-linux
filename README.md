@@ -126,10 +126,8 @@ $ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
 Build with the following flags:
 
 ```
-$ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 arch -x86_64 /usr/bin/make -j
+$ APP_CUSTOM=1 TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1 /usr/bin/make -j
 ```
-
-Note that this does build an x86 binary, but it runs very fast through Rosetta.
 
 ### AARCH64 with AI Acceleration
 
@@ -224,13 +222,16 @@ In case of any issues during runtime, check [Troubleshooting](https://docs.edgei
 
 You can also build with support for TIDL, this fully leverages the Deep Learning Accelerator on the Texas Instruments TDA4VM (AM68PA), AM62A, AM68A.
 
+> [!IMPORTANT]
+> Texas Instruments boards are legacy-supported. Current version of Tensorflow Lite (2.16.1) is not supported, you need to checkout the earlier commit before proceeding.
+> `git checkout ab4fa0758093a0ebb713e49462ae3c615d19bfa1`
+
 ##### TDA4VM (AM68PA)
 
 1. Go to the **Deployment** page in the Edge Impulse Studio.
-1. Select the 'TIDL-RT Library', and the 'float32' optimizations.
-1. Build the library and copy the folders into this repository.
-1. Build your (.eim) application:
-
+2. Select the 'TIDL-RT Library', and the 'float32' optimizations.
+3. Build the library and copy the folders into this repository.
+4. Build your (.eim) application:
     ```
     $ APP_EIM=1 TARGET_TDA4VM=1 make -j
     ```
@@ -244,9 +245,9 @@ $ APP_EIM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
 ##### TI AM62A
 
 1. Go to the **Deployment** page in the Edge Impulse Studio.
-1. Select the 'TIDL-RT Library (AM62A)', and the 'float32' optimizations.
-1. Build the library and copy the folders into this repository.
-1. Build your (.eim) application:
+2. Select the 'TIDL-RT Library (AM62A)', and the 'float32' optimizations.
+3. Build the library and copy the folders into this repository.
+4. Build your (.eim) application:
 
     ```
     $ APP_EIM=1 TARGET_AM62A=1 make -j
@@ -261,9 +262,9 @@ $ APP_EIM=1 TARGET_AM62A=1 USE_ONNX=1 make -j
 ##### TI AM68A
 
 1. Go to the **Deployment** page in the Edge Impulse Studio.
-1. Select the 'TIDL-RT Library (AM68A)', and the 'float32' optimizations.
-1. Build the library and copy the folders into this repository.
-1. Build your (.eim) application:
+2. Select the 'TIDL-RT Library (AM68A)', and the 'float32' optimizations.
+3. Build the library and copy the folders into this repository.
+4. Build your (.eim) application:
 
     ```
     $ APP_EIM=1 TARGET_AM68A=1 make -j
