@@ -238,6 +238,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 {"image_input_height", EI_CLASSIFIER_INPUT_HEIGHT},
                 {"image_input_frames", EI_CLASSIFIER_INPUT_FRAMES},
                 {"image_channel_count", channel_count},
+                {"image_resize_mode", EI_RESIZE_STRINGS[EI_CLASSIFIER_RESIZE_MODE]},
                 {"label_count", EI_CLASSIFIER_LABEL_COUNT},
                 {"has_anomaly", EI_CLASSIFIER_HAS_ANOMALY},
                 {"labels", labels},
