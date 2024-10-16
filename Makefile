@@ -174,6 +174,20 @@ CXXSOURCES += source/camera.cpp
 ifeq ($(UNAME_S),Linux) # on Linux set the library paths as well
 LDFLAGS += -L/usr/local/lib -Wl,-R/usr/local/lib
 endif
+ifeq ($(UNAME_S),Darwin) # add rpath on MacOS
+LDFLAGS += -Wl,-rpath,/usr/local/lib
+endif
+LDFLAGS += -lopencv_ml -lopencv_objdetect -lopencv_stitching  -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_core
+else ifeq (${APP_VIDEO},1)
+NAME = video
+CFLAGS += -Iopencv/build_opencv/ -Iopencv/opencv/include -Iopencv/opencv/3rdparty/include -Iopencv/opencv/3rdparty/quirc/include -Iopencv/opencv/3rdparty/carotene/include -Iopencv/opencv/3rdparty/ittnotify/include -Iopencv/opencv/3rdparty/openvx/include -Iopencv/opencv/modules/video/include -Iopencv/opencv/modules/flann/include -Iopencv/opencv/modules/core/include -Iopencv/opencv/modules/stitching/include -Iopencv/opencv/modules/imgproc/include -Iopencv/opencv/modules/objdetect/include -Iopencv/opencv/modules/gapi/include -Iopencv/opencv/modules/world/include -Iopencv/opencv/modules/ml/include -Iopencv/opencv/modules/imgcodecs/include -Iopencv/opencv/modules/dnn/include -Iopencv/opencv/modules/dnn/src/vkcom/include -Iopencv/opencv/modules/dnn/src/ocl4dnn/include -Iopencv/opencv/modules/dnn/src/tengine4dnn/include -Iopencv/opencv/modules/videoio/include -Iopencv/opencv/modules/highgui/include -Iopencv/opencv/modules/features2d/include -Iopencv/opencv/modules/ts/include -Iopencv/opencv/modules/photo/include -Iopencv/opencv/modules/calib3d/include
+CXXSOURCES += source/video.cpp
+ifeq ($(UNAME_S),Linux) # on Linux set the library paths as well
+LDFLAGS += -L/usr/local/lib -Wl,-R/usr/local/lib
+endif
+ifeq ($(UNAME_S),Darwin) # add rpath on MacOS
+LDFLAGS += -Wl,-rpath,/usr/local/lib
+endif
 LDFLAGS += -lopencv_ml -lopencv_objdetect -lopencv_stitching  -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_video -lopencv_photo -lopencv_imgproc -lopencv_flann -lopencv_core
 else ifeq (${APP_COLLECT},1)
 NAME = collect
