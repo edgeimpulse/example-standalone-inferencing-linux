@@ -21,7 +21,8 @@ fi
 mkdir -p build_opencv
 cd build_opencv
 cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_EXAMPLES=ON -DBUILD_ZLIB=OFF ../opencv
-make -j
+# use number of cores - 1
+make -j$(nproc --all)
 
 echo "Installing libraries, this will prompt for sudo"
 sudo make install
