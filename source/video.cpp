@@ -105,12 +105,12 @@ int main(int argc, char** argv) {
     cv::VideoWriter output_file("output.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10, cv::Size(EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT));
 
     if (use_debug) {
-        // create a window to display the images from the webcam
-        cv::namedWindow("Webcam", cv::WINDOW_AUTOSIZE);
+        // create a window to display the images from the file
+        cv::namedWindow("File", cv::WINDOW_AUTOSIZE);
         // create an output file
     }
 
-    // this will contain the image from the webcam
+    // this will contain the image from the file
     cv::Mat frame;
 
     // display the frames until the end of the file
@@ -119,7 +119,7 @@ int main(int argc, char** argv) {
         // 100ms. between inference
         int64_t next_frame = (int64_t)(ei_read_timer_ms() + 100);
 
-        // capture the next frame from the webcam
+        // capture the next frame
         file >> frame;
 
         if (frame.empty()) {
