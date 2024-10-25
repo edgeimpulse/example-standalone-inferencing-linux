@@ -31,6 +31,16 @@ This library lets you run machine learning models and collect sensor data on Lin
 
     Note that you cannot run any of the audio examples on macOS, as these depend on libasound2, which is not available there.
 
+    **Linux - aarch64 (cross-compile)**
+
+    To cross-compile the opencv libraries for aarch64:
+
+    ```
+    $ CC=<your-CC-aarch64-cross-compiler> \
+      CXX=<your-CXX-aarch64-cross-compiler> \
+      sh build-opencv-linux-aarch64-cross-compile.sh --build-only          # only needed if you want to run the camera example
+    ```
+
 ## Collecting data
 
 Before you can classify data you'll first need to collect it. If you want to collect data from the camera or microphone on your system you can use the Edge Impulse CLI, and if you want to collect data from different sensors (like accelerometers or proprietary control systems) you can do so in a few lines of code.
