@@ -33,13 +33,15 @@ This library lets you run machine learning models and collect sensor data on Lin
 
     **Linux - aarch64 (cross-compile)**
 
-    To cross-compile the opencv libraries for aarch64:
+    To cross-compile the OpenCV libraries for aarch64:
 
     ```
     $ CC=<your-CC-aarch64-cross-compiler> \
       CXX=<your-CXX-aarch64-cross-compiler> \
       sh build-opencv-linux-aarch64-cross-compile.sh --build-only          # only needed if you want to run the camera example
     ```
+
+The `--build-only` flag will build and install the libraries and binaries in `<path-to-script>/opencv/build_opencv/install/`. Copy the contents of `install/` directory to the target, somewhere discoverable by your `PATH`.
 
 ## Collecting data
 
