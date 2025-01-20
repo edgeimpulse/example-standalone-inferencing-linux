@@ -356,3 +356,12 @@ To solve this:
 
 2. Build your application with `LINK_TFLITE_FLEX_LIBRARY=1` .
 3. Copy the shared library for your platform to `/usr/lib` or `/usr/local/lib` to run your application (see [Docs: Flex delegates](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux/flex-delegates)).
+
+
+# QC
+
+```
+docker build -t qc-test .
+docker run --rm -it -v $PWD:/app qc-test bash -c "APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1 make"
+./build/custom ./features.txt # <-- contains binary with qnn delegates
+```

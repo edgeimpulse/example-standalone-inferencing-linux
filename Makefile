@@ -105,7 +105,7 @@ LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfa
 endif # TARGET_LINUX_ARMV7
 ifeq (${TARGET_LINUX_AARCH64},1)
 CFLAGS += -DDISABLEFLOAT16
-LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
+LDFLAGS += -L./tflite/linux-aarch64 -L./qnn-libs/aarch64-ubuntu-gcc9.4 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lQnnTFLiteDelegate
 endif # TARGET_LINUX_AARCH64
 ifeq (${TARGET_LINUX_X86},1)
 LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
