@@ -46,7 +46,7 @@
 #include "edge-impulse-sdk/classifier/ei_model_types.h"
 #include "edge-impulse-sdk/classifier/inferencing_engines/engines.h"
 
-const char* ei_classifier_inferencing_categories[] = { "beer" };
+const char* ei_classifier_inferencing_categories[] = { "jan", "thumbsup" };
 
 EI_CLASSIFIER_DSP_AXES_INDEX_TYPE ei_dsp_config_3_axes[] = { 0 };
 const uint32_t ei_dsp_config_3_axes_size = 1;
@@ -63,7 +63,7 @@ const uint8_t ei_dsp_blocks_size = 1;
 ei_model_dsp_t ei_dsp_blocks[ei_dsp_blocks_size] = {
     { // DSP block 3
         3,
-        76800, // output size
+        442368, // output size
         &extract_image_features, // DSP function pointer
         (void*)&ei_dsp_config_3, // pointer to config struct
         ei_dsp_config_3_axes, // array of offsets into the input stream, one for each axis
@@ -88,7 +88,7 @@ const ei_learning_block_config_tflite_graph_t ei_learning_block_config_5 = {
     .output_data_tensor = 0,
     .output_labels_tensor = 1,
     .output_score_tensor = 2,
-    .threshold = 0.5,
+    .threshold = 0.3,
     .quantized = 0,
     .compiled = 0,
     .graph_config = (void*)&ei_config_tflite_graph_5
@@ -106,7 +106,7 @@ const ei_learning_block_t ei_learning_blocks[ei_learning_blocks_size] = {
         EI_CLASSIFIER_IMAGE_SCALING_NONE,
         ei_learning_block_5_inputs,
         ei_learning_block_5_inputs_size,
-        9450
+        63504
     },
 };
 
@@ -116,20 +116,20 @@ const ei_object_detection_nms_config_t ei_object_detection_nms = {
     0.2f  /* NMS IOU threshold */
 };
 
-const ei_impulse_t impulse_20_0 = {
-    .project_id = 20,
-    .project_owner = "Jan Jongboom",
-    .project_name = "Beer bottle Yolov5",
+const ei_impulse_t impulse_161053_0 = {
+    .project_id = 161053,
+    .project_owner = "Community blocks",
+    .project_name = "Jan vs niet Jan YOLOv5",
     .impulse_id = 1,
     .impulse_name = "Impulse #1",
-    .deploy_version = 5,
+    .deploy_version = 6,
 
-    .nn_input_frame_size = 76800,
-    .raw_sample_count = 25600,
+    .nn_input_frame_size = 442368,
+    .raw_sample_count = 147456,
     .raw_samples_per_frame = 1,
-    .dsp_input_frame_size = 25600 * 1,
-    .input_width = 160,
-    .input_height = 160,
+    .dsp_input_frame_size = 147456 * 1,
+    .input_width = 384,
+    .input_height = 384,
     .input_frames = 1,
     .interval_ms = 1,
     .frequency = 0,
@@ -140,10 +140,10 @@ const ei_impulse_t impulse_20_0 = {
     .fomo_output_size = 0,
     
     
-    .visual_ad_grid_size_x = int((160 / 8) / 2 - 1),
-    .visual_ad_grid_size_y = int((160 / 8) / 2 - 1),
+    .visual_ad_grid_size_x = int((384 / 8) / 2 - 1),
+    .visual_ad_grid_size_y = int((384 / 8) / 2 - 1),
     
-    .tflite_output_features_count = 9450,
+    .tflite_output_features_count = 63504,
     .learning_blocks_size = ei_learning_blocks_size,
     .learning_blocks = ei_learning_blocks,
 
@@ -154,16 +154,16 @@ const ei_impulse_t impulse_20_0 = {
 
     .sensor = EI_CLASSIFIER_SENSOR_CAMERA,
     .fusion_string = "image",
-    .slice_size = (25600/4),
+    .slice_size = (147456/4),
     .slices_per_model_window = 4,
 
     .has_anomaly = EI_ANOMALY_TYPE_UNKNOWN,
-    .label_count = 1,
+    .label_count = 2,
     .categories = ei_classifier_inferencing_categories,
     .object_detection_nms = ei_object_detection_nms
 };
 
-ei_impulse_handle_t impulse_handle_20_0 = ei_impulse_handle_t( &impulse_20_0 );
-ei_impulse_handle_t& ei_default_impulse = impulse_handle_20_0;
+ei_impulse_handle_t impulse_handle_161053_0 = ei_impulse_handle_t( &impulse_161053_0 );
+ei_impulse_handle_t& ei_default_impulse = impulse_handle_161053_0;
 
 #endif // _EI_CLASSIFIER_MODEL_VARIABLES_H_
