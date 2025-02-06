@@ -85,6 +85,10 @@ int main(int argc, char **argv) {
     numpy::signal_from_buffer(&raw_features[0], raw_features.size(), &signal);
 
     EI_IMPULSE_ERROR res = run_classifier(&signal, &result, false);
+    if (res != EI_IMPULSE_OK) {
+        printf("run_classifier failed (%d)\n", (int)res);
+        return 1;
+    }
     // print the predictions
     printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                 result.timing.dsp, result.timing.classification, result.timing.anomaly);
@@ -119,7 +123,7 @@ int main(int argc, char **argv) {
         printf("\n");
     }
 #endif
-#if EI_CLASSIFIER_HAS_ANOMALY == 3 // visual AD
+#if EI_CLASSIFIER_HAS_ANOMALY == EI_ANOMALY_TYPE_VISUAL_GMM // visual AD
     printf("#Visual anomaly grid results:\n");
     for (uint32_t i = 0; i < result.visual_ad_count; i++) {
         ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
