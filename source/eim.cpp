@@ -393,7 +393,6 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         bool found_block = false;
         int block_id = set_threshold["id"].GetInt();
-        printf("set_threshold for block_id %d\n", block_id);
         for (size_t ix = 0; ix < ei_learning_blocks_size; ix++) {
             const ei_learning_block_t learn_block = ei_learning_blocks[ix];
             if (learn_block.blockId != block_id) continue;
@@ -403,17 +402,8 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             if (learn_block.infer_fn == run_gmm_anomaly) {
                 ei_learning_block_config_anomaly_gmm_t *config = (ei_learning_block_config_anomaly_gmm_t*)learn_block.config;
 
-                printf("has_member = %d\n", set_threshold.HasMember("min_anomaly_score"));
-                printf("IsDouble = %d\n", set_threshold["min_anomaly_score"].IsDouble());
-                printf("IsNumber = %d\n", set_threshold["min_anomaly_score"].IsNumber());
-                printf("IsFloat = %d\n", set_threshold["min_anomaly_score"].IsFloat());
-                printf("IsInt = %d\n", set_threshold["min_anomaly_score"].IsInt());
-                printf("GetFloat = %f\n", set_threshold["min_anomaly_score"].GetFloat());
-
                 if (set_threshold.HasMember("min_anomaly_score") && set_threshold["min_anomaly_score"].IsNumber()) {
                     config->anomaly_threshold = set_threshold["min_anomaly_score"].GetFloat();
-
-                    printf("updated min_anomaly_score, now is %f\n", config->anomaly_threshold);
                 }
             }
             else if (learn_block.infer_fn == run_nn_inference) {
@@ -441,7 +431,6 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             {"success", true},
         };
         snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
-        printf("ok done\n");
         return;
     }
     else {
