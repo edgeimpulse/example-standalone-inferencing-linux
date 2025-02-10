@@ -9,6 +9,8 @@
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include "json/json.hpp"
 #include "rapidjson/document.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/stringbuffer.h"
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -447,7 +449,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 int print_metadata_main() {
     char output_buffer[100 * 1024] = { 0 };
 
-    // Construct a hello msg and print the response
+    // Construct a hello msg into output_buffer
     {
         rapidjson::Document msg;
         msg.SetObject();
@@ -455,7 +457,16 @@ int print_metadata_main() {
         msg.AddMember("id", 1, allocator);
         msg.AddMember("hello", 1, allocator);
         json_message_handler(msg, output_buffer, 100 * 1024, 0, 0);
-        printf("%s\n", output_buffer);
+    }
+
+    // pretty print (by first parsing, then re-printing)
+    {
+        rapidjson::Document document;
+        document.Parse(output_buffer);
+        rapidjson::StringBuffer buffer;
+        rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+        document.Accept(writer);
+        printf("%s\n", buffer.GetString());
     }
 
     return 0;
