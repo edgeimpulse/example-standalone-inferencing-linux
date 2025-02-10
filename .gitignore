@@ -16,3 +16,4 @@ opencv/
 *.onnx
 convert-savedmodel/saved_model/
 debug.bmp
+.DS_Store
