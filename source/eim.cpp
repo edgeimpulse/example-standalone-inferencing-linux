@@ -395,6 +395,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         bool found_block = false;
         int block_id = set_threshold["id"].GetInt();
+        printf("block_id=%d\n", block_id);
         for (size_t ix = 0; ix < ei_learning_blocks_size; ix++) {
             const ei_learning_block_t learn_block = ei_learning_blocks[ix];
             if (learn_block.blockId != block_id) continue;
@@ -413,6 +414,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 if (config->classification_mode == EI_CLASSIFIER_CLASSIFICATION_MODE_OBJECT_DETECTION) {
                     if (set_threshold.HasMember("min_score") && set_threshold["min_score"].IsNumber()) {
                         config->threshold = set_threshold["min_score"].GetFloat();
+                        printf("min_score is now %f\n", config->threshold);
                     }
                 }
             }
