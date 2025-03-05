@@ -133,12 +133,12 @@ Build with the following flags:
 $ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
 ```
 
-**M1-based Macs**
+**Apple silicon based Macs**
 
 Build with the following flags:
 
 ```
-$ APP_CUSTOM=1 TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1 /usr/bin/make -j
+$ APP_CUSTOM=1 TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1 make -j
 ```
 
 ### AARCH64 with AI Acceleration
