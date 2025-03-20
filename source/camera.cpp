@@ -54,8 +54,12 @@ void resize_and_crop(cv::Mat *in_frame, cv::Mat *out_frame) {
 
     float largest_factor = factor_w > factor_h ? factor_w : factor_h;
 
-    cv::Size resize_size(static_cast<int>(largest_factor * static_cast<float>(in_frame->cols)),
-        static_cast<int>(largest_factor * static_cast<float>(in_frame->rows)));
+    cv::Size resize_size(ceil(largest_factor * static_cast<float>(in_frame->cols)),
+        ceil(largest_factor * static_cast<float>(in_frame->rows)));
+
+    if (use_debug) {
+        printf("resize_size width=%d height=%d\n", resize_size.width, resize_size.height);
+    }
 
     cv::Mat resized;
     cv::resize(*in_frame, resized, resize_size);
@@ -86,7 +90,7 @@ int main(int argc, char** argv) {
         printf("You can find these via `v4l2-ctl --list-devices`.\n");
         printf("E.g. for:\n");
         printf("    C922 Pro Stream Webcam (usb-70090000.xusb-2.1):\n");
-	    printf("            /dev/video0\n");
+        printf("            /dev/video0\n");
         printf("The ID of the webcam is 0\n");
         exit(1);
     }
@@ -105,6 +109,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    // print camera properties
+    printf("");
+    printf("Camera properties:\n");
+    printf("    width: %d\n", (int)camera.get(cv::CAP_PROP_FRAME_WIDTH));
+    printf("    height: %d\n", (int)camera.get(cv::CAP_PROP_FRAME_HEIGHT));
+    printf("    fps: %d\n", (int)camera.get(cv::CAP_PROP_FPS));
+
     if (use_debug) {
         // create a window to display the images from the webcam
         cv::namedWindow("Webcam", cv::WINDOW_AUTOSIZE);
@@ -112,6 +123,7 @@ int main(int argc, char** argv) {
 
     // this will contain the image from the webcam
     cv::Mat frame;
+    run_classifier_init();
 
     // display the frame until you press a key
     while (1) {
@@ -187,9 +199,31 @@ int main(int argc, char** argv) {
         printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
     #endif
 
+        // print the open traces
+        ei_printf("Open traces:\r\n");
+        for (uint32_t i = 0; i < result.postprocessed_output.object_tracking_output.open_traces_count; i++) {
+            ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[i];
+            ei_printf("  Trace %d: %s [ x: %u, y: %u, width: %u, height: %u, value: %f ]\r\n",
+                    trace.id,
+                    trace.label,
+                    trace.x,
+                    trace.y,
+                    trace.width,
+                    trace.height,
+                    trace.value);
+        }
+
         // show the image on the window
         if (use_debug) {
-            cv::imshow("Webcam", cropped);
+            // draw the bounding boxes of the traces
+            for (uint32_t i = 0; i < result.postprocessed_output.object_tracking_output.open_traces_count; i++) {
+                ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[i];
+                cv::rectangle(cropped, cv::Rect(trace.x, trace.y, trace.width, trace.height), cv::Scalar(0, 255, 0), 2);
+                // add the label and ID
+                cv::putText(cropped, std::to_string(trace.id) + ": " + trace.label, cv::Point(trace.x, trace.y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
+            }
+            cv::imshow("File", cropped);
+            output_file.write(cropped);
             // wait (10ms) for a key to be pressed
             if (cv::waitKey(10) >= 0)
                 break;
@@ -200,6 +234,7 @@ int main(int argc, char** argv) {
             usleep(sleep_ms * 1000);
         }
     }
+    run_classifier_deinit();
     return 0;
 }
 
