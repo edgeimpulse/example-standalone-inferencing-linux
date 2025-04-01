@@ -223,7 +223,6 @@ int main(int argc, char** argv) {
                 cv::putText(cropped, std::to_string(trace.id) + ": " + trace.label, cv::Point(trace.x, trace.y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
             }
             cv::imshow("File", cropped);
-            output_file.write(cropped);
             // wait (10ms) for a key to be pressed
             if (cv::waitKey(10) >= 0)
                 break;
