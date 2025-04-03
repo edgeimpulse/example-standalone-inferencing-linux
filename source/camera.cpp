@@ -58,7 +58,7 @@ void resize_and_crop(cv::Mat *in_frame, cv::Mat *out_frame) {
         ceil(largest_factor * static_cast<float>(in_frame->rows)));
 
     if (use_debug) {
-        printf("resize_size width=%d height=%d\n", resize_size.width, resize_size.height);
+        ei_printf("resize_size width=%d height=%d\n", resize_size.width, resize_size.height);
     }
 
     cv::Mat resized;
@@ -74,7 +74,7 @@ void resize_and_crop(cv::Mat *in_frame, cv::Mat *out_frame) {
     cv::Rect crop_region(crop_x, crop_y, EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
 
     if (use_debug) {
-        printf("crop_region x=%d y=%d width=%d height=%d\n", crop_x, crop_y, EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
+        ei_printf("crop_region x=%d y=%d width=%d height=%d\n", crop_x, crop_y, EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
     }
 
     *out_frame = resized(crop_region);
@@ -86,12 +86,12 @@ int main(int argc, char** argv) {
     // Try it from a real terminal.
 
     if (argc < 2) {
-        printf("Requires one parameter (ID of the webcam).\n");
-        printf("You can find these via `v4l2-ctl --list-devices`.\n");
-        printf("E.g. for:\n");
-        printf("    C922 Pro Stream Webcam (usb-70090000.xusb-2.1):\n");
-        printf("            /dev/video0\n");
-        printf("The ID of the webcam is 0\n");
+        ei_printf("Requires one parameter (ID of the webcam).\n");
+        ei_printf("You can find these via `v4l2-ctl --list-devices`.\n");
+        ei_printf("E.g. for:\n");
+        ei_printf("    C922 Pro Stream Webcam (usb-70090000.xusb-2.1):\n");
+        ei_printf("            /dev/video0\n");
+        ei_printf("The ID of the webcam is 0\n");
         exit(1);
     }
 
@@ -110,11 +110,11 @@ int main(int argc, char** argv) {
     }
 
     // print camera properties
-    printf("");
-    printf("Camera properties:\n");
-    printf("    width: %d\n", (int)camera.get(cv::CAP_PROP_FRAME_WIDTH));
-    printf("    height: %d\n", (int)camera.get(cv::CAP_PROP_FRAME_HEIGHT));
-    printf("    fps: %d\n", (int)camera.get(cv::CAP_PROP_FPS));
+    ei_printf("");
+    ei_printf("Camera properties:\n");
+    ei_printf("    width: %d\n", (int)camera.get(cv::CAP_PROP_FRAME_WIDTH));
+    ei_printf("    height: %d\n", (int)camera.get(cv::CAP_PROP_FRAME_HEIGHT));
+    ei_printf("    fps: %d\n", (int)camera.get(cv::CAP_PROP_FPS));
 
     if (use_debug) {
         // create a window to display the images from the webcam
@@ -160,12 +160,12 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-    // print the predictions
-    printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-                result.timing.dsp, result.timing.classification, result.timing.anomaly);
+        // print the predictions
+        ei_printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
+                    result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
-    #if EI_CLASSIFIER_OBJECT_DETECTION == 1
-        printf("#Object detection results:\n");
+        #if EI_CLASSIFIER_OBJECT_DETECTION == 1
+        ei_printf("#Object detection results:\n");
         bool found_bb = false;
         for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
             auto bb = result.bounding_boxes[ix];
@@ -174,30 +174,30 @@ int main(int argc, char** argv) {
             }
 
             found_bb = true;
-            printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+            ei_printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
         }
 
         if (!found_bb) {
-            printf("    no objects found\n");
+            ei_printf("    no objects found\n");
         }
-    #else
-        printf("#Classification results:\n");
+        #else
+        ei_printf("#Classification results:\n");
         for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            printf("%s: %.05f\n", result.classification[ix].label, result.classification[ix].value);
+            ei_printf("%s: %.05f\n", result.classification[ix].label, result.classification[ix].value);
         }
-    #endif
+        #endif
 
-    #if EI_CLASSIFIER_HAS_ANOMALY == 3 // visual AD
-        printf("#Visual anomaly grid results:\n");
+        #if EI_CLASSIFIER_HAS_ANOMALY == 3 // visual AD
+        ei_printf("#Visual anomaly grid results:\n");
         for (uint32_t i = 0; i < result.visual_ad_count; i++) {
             ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
             if (bb.value == 0) {
                 continue;
             }
-            printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
+            ei_printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
         }
-        printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
-    #endif
+        ei_printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
+        #endif
 
         // print the open traces
         ei_printf("Open traces:\r\n");
