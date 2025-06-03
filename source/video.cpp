@@ -124,6 +124,7 @@ int main(int argc, char** argv) {
 
     // this will contain the image from the file
     cv::Mat frame;
+    run_classifier_init();
 
     // display the frames until the end of the file
     while (true) {
@@ -165,6 +166,7 @@ int main(int argc, char** argv) {
             return 1;
         }
 
+
     // print the predictions
     printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                 result.timing.dsp, result.timing.classification, result.timing.anomaly);
@@ -204,17 +206,28 @@ int main(int argc, char** argv) {
         printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
     #endif
 
+        // print the open traces
+        ei_printf("Open traces:\r\n");
+        for (uint32_t i = 0; i < result.postprocessed_output.object_tracking_output.open_traces_count; i++) {
+            ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[i];
+            ei_printf("  Trace %d: %s [ x: %u, y: %u, width: %u, height: %u, value: %f ]\r\n",
+                    trace.id,
+                    trace.label,
+                    trace.x,
+                    trace.y,
+                    trace.width,
+                    trace.height,
+                    trace.value);
+        }
+
         // show the image on the window
         if (use_debug) {
-            // draw the bounding boxes
-            for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
-                auto bb = result.bounding_boxes[ix];
-                if (bb.value == 0) {
-                    continue;
-                }
-
-                cv::rectangle(cropped, cv::Rect(bb.x, bb.y, bb.width, bb.height), cv::Scalar(0, 255, 0), 2);
-                cv::putText(cropped, bb.label, cv::Point(bb.x, bb.y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
+            // draw the bounding boxes of the traces
+            for (uint32_t i = 0; i < result.postprocessed_output.object_tracking_output.open_traces_count; i++) {
+                ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[i];
+                cv::rectangle(cropped, cv::Rect(trace.x, trace.y, trace.width, trace.height), cv::Scalar(0, 255, 0), 2);
+                // add the label and ID
+                cv::putText(cropped, std::to_string(trace.id) + ": " + trace.label, cv::Point(trace.x, trace.y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 255, 0), 2);
             }
 
             cv::imshow("File", cropped);
@@ -229,6 +242,8 @@ int main(int argc, char** argv) {
             usleep(sleep_ms * 1000);
         }
     }
+
+    run_classifier_deinit();
     output_file.release();
     file.release();
     return 0;
