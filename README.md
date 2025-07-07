@@ -321,6 +321,20 @@ To build for ONNX runtime:
 $ APP_CUSTOM=1 TARGET_AM68A=1 USE_ONNX=1 make -j
 ```
 
+#### Qualcomm SoCs with Hexagon NPU
+
+For Qualcomm targets that have the Hexagon NPU on board (e.g. Dragonwing QCS6490 SoC, RB3 Gen 2 Dev Kit, Thundercomm RUBIK Pi 3, etc.), you can build the application with [TFLite QNN delegates support](https://docs.qualcomm.com/bundle/publicresource/topics/80-63442-50/tflite_delegate.html).
+
+
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'C++ library' and choose optimization `Quantized (int8)`.
+1. Build the library and copy the folders into this repository.
+1. Build your application with `USE_QUALCOMM_QNN=1`, for example the EIM:
+
+    ```
+    $ APP_EIM=1 TARGET_LINUX_AARCH64=1 USE_QUALCOMM_QNN=1 make -j
+    ```
+
 ## Building .eim files
 
 To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:
