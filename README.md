@@ -325,6 +325,12 @@ $ APP_CUSTOM=1 TARGET_AM68A=1 USE_ONNX=1 make -j
 
 For Qualcomm targets that have the Hexagon NPU on board (e.g. Dragonwing QCS6490 SoC, RB3 Gen 2 Dev Kit, Thundercomm RUBIK Pi 3, etc.), you can build the application with [TFLite QNN delegates support](https://docs.qualcomm.com/bundle/publicresource/topics/80-63442-50/tflite_delegate.html).
 
+1. Download the [AI Engione Direct SDK](https://www.qualcomm.com/developer/software/qualcomm-ai-engine-direct-sdk)
+1. Extract it and export the path to the SDK root, for example:
+
+    ```
+    export QNN_SDK_ROOT=/home/user/qairt/2.36.0.250627/
+    ```
 
 1. Go to the **Deployment** page in the Edge Impulse Studio.
 1. Select the 'C++ library' and choose optimization `Quantized (int8)`.
