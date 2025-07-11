@@ -135,7 +135,7 @@ int main(int argc, char **argv) {
         printf("\n");
     }
 #endif
-#if EI_CLASSIFIER_HAS_ANOMALY == EI_ANOMALY_TYPE_VISUAL_GMM // visual AD
+#if EI_CLASSIFIER_HAS_VISUAL_ANOMALY // visual AD
     printf("#Visual anomaly grid results:\n");
     for (uint32_t i = 0; i < result.visual_ad_count; i++) {
         ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
