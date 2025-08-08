@@ -7,6 +7,7 @@
 #include <chrono>
 #include <vector>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
+#include "edge-impulse-sdk/classifier/postprocessing/ei_postprocessing_common.h"
 #include "json/json.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
@@ -77,6 +78,43 @@ void json_send_classification_response(int id,
     }
 
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
+    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+
+    // For object tracking we'll do two things:
+    // 1. we create bounding boxes for backwards compatibility (unique label per bb)
+    // 2. separate object with traces
+    nlohmann::json bb_res = nlohmann::json::array();
+    nlohmann::json tracking_res = nlohmann::json::array();
+    for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
+        ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
+
+        char label[100];
+        snprintf(label, 100, "%s (id=%d)", trace.label, (int)trace.id);
+
+        nlohmann::json bb_json = {
+            {"label", label},
+            {"value", trace.value == 0.0f ? 1.0f : trace.value},
+            {"x", trace.x},
+            {"y", trace.y},
+            {"width", trace.width},
+            {"height", trace.height},
+        };
+        bb_res.push_back(bb_json);
+
+        nlohmann::json tracking_json = {
+            {"object_id", trace.id},
+            {"label", trace.label},
+            {"value", trace.value == 0.0f ? 1.0f : trace.value},
+            {"x", trace.x},
+            {"y", trace.y},
+            {"width", trace.width},
+            {"height", trace.height},
+        };
+        tracking_res.push_back(tracking_json);
+    }
+
+    #else
+
     nlohmann::json bb_res = nlohmann::json::array();
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
         auto bb = result.bounding_boxes[ix];
@@ -93,6 +131,8 @@ void json_send_classification_response(int id,
         };
         bb_res.push_back(bb_json);
     }
+
+    #endif // EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
 #else
     #if EI_CLASSIFIER_LABEL_COUNT > 0
     nlohmann::json classify_res;
@@ -127,6 +167,9 @@ void json_send_classification_response(int id,
         {"result", {
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
             {"bounding_boxes", bb_res},
+    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+            {"object_tracking", tracking_res},
+    #endif
 #else
     #if EI_CLASSIFIER_LABEL_COUNT > 0
             {"classification", classify_res},
@@ -196,6 +239,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         run_classifier_init();
 
+        vector<std::string> engine_properties;
         vector<std::string> labels;
         for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
             labels.push_back(std::string(ei_classifier_inferencing_categories[ix]));
@@ -220,41 +264,64 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         const char *model_type = "object_detection";
     #endif // EI_CLASSIFIER_OBJECT_DETECTION_LAST_LAYER
 #else
-    const char *model_type = "classification";
+        const char *model_type = "classification";
 #endif // EI_CLASSIFIER_OBJECT_DETECTION
 
         // keep track of configurable thresholds
+        // this needs to be kept in sync with jobs-container/cpp-exporter/wasm/emcc_binding.cpp
         nlohmann::json thresholds = nlohmann::json::array();
-        for (size_t ix = 0; ix < ei_learning_blocks_size; ix++) {
-            const ei_learning_block_t learn_block = ei_learning_blocks[ix];
-            if (learn_block.infer_fn == run_gmm_anomaly) {
-                ei_learning_block_config_anomaly_gmm_t *config = (ei_learning_block_config_anomaly_gmm_t*)learn_block.config;
+        const ei_impulse_t *impulse = ei_default_impulse.impulse;
+
+        for (size_t ix = 0; ix < impulse->postprocessing_blocks_size; ix++) {
+            const ei_postprocessing_block_t pp_block = impulse->postprocessing_blocks[ix];
+            float threshold = 0.0f;
+            std::string type_str = "unknown";
+            std::string threshold_name_str = "unknown";
+            auto res = get_threshold_postprocessing(&type_str, &threshold_name_str, pp_block.config, pp_block.type, &threshold);
+            if (res == EI_IMPULSE_OK) {
                 thresholds.push_back({
-                    { "id", learn_block.blockId },
-                    { "type", "anomaly_gmm" },
-                    { "min_anomaly_score", config->anomaly_threshold }
+                    { "id", pp_block.block_id },
+                    { "type", type_str.c_str() },
+                    { threshold_name_str.c_str(), threshold }
+                });
+            };
+        #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+            if (pp_block.init_fn == init_object_tracking) {
+                const ei_object_tracking_config_t *config = (ei_object_tracking_config_t*)pp_block.config;
+
+                thresholds.push_back({
+                    { "id", pp_block.block_id },
+                    { "type", "object_tracking" },
+                    { "keep_grace", config->keep_grace },
+                    { "max_observations", config->max_observations },
+                    { "threshold", config->threshold },
                 });
             }
-            else if (learn_block.infer_fn == run_nn_inference) {
-                ei_learning_block_config_tflite_graph_t *config = (ei_learning_block_config_tflite_graph_t*)learn_block.config;
-                if (config->classification_mode == EI_CLASSIFIER_CLASSIFICATION_MODE_OBJECT_DETECTION) {
-                    thresholds.push_back({
-                        { "id", learn_block.blockId },
-                        { "type", "object_detection" },
-                        { "min_score", config->threshold }
-                    });
-                }
-            }
+        #endif // #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
         }
+
+    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+        const bool has_object_tracking = true;
+    #else
+        const bool has_object_tracking = false;
+    #endif
+    #if EI_CLASSIFIER_USE_GPU_DELEGATES == 1
+        engine_properties.push_back("gpu_delegates");
+    #endif
+    #if EI_CLASSIFIER_USE_QNN_DELEGATES == 1
+        engine_properties.push_back("qnn_delegates");
+    #endif
 
         nlohmann::json resp = {
             {"id", id},
             {"success", true},
             {"project", {
-                {"id", EI_CLASSIFIER_PROJECT_ID},
-                {"owner", std::string(EI_CLASSIFIER_PROJECT_OWNER)},
-                {"name", std::string(EI_CLASSIFIER_PROJECT_NAME)},
-                {"deploy_version", EI_CLASSIFIER_PROJECT_DEPLOY_VERSION},
+                {"id", ei_default_impulse.impulse->project_id},
+                {"owner", std::string(ei_default_impulse.impulse->project_owner)},
+                {"name", std::string(ei_default_impulse.impulse->project_name)},
+                {"deploy_version", ei_default_impulse.impulse->deploy_version},
+                {"impulse_id", ei_default_impulse.impulse->impulse_id},
+                {"impulse_name", std::string(ei_default_impulse.impulse->impulse_name)},
             }},
             {"model_parameters", {
                 {"input_features_count", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE},
@@ -269,6 +336,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 {"image_resize_mode", EI_RESIZE_STRINGS[EI_CLASSIFIER_RESIZE_MODE]},
                 {"label_count", EI_CLASSIFIER_LABEL_COUNT},
                 {"has_anomaly", EI_CLASSIFIER_HAS_ANOMALY},
+                {"has_object_tracking", has_object_tracking},
                 {"labels", labels},
                 {"model_type", model_type},
                 {"slice_size", EI_CLASSIFIER_SLICE_SIZE},
@@ -276,6 +344,10 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 {"inferencing_engine", EI_CLASSIFIER_INFERENCING_ENGINE},
                 {"thresholds", thresholds},
             }},
+            {"inferencing_engine", {
+                {"engine_type", EI_CLASSIFIER_INFERENCING_ENGINE},
+                {"properties", engine_properties},
+            }}
         };
 
         snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
@@ -393,31 +465,63 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             return;
         }
 
+        // this needs to be kept in sync with jobs-container/cpp-exporter/wasm/emcc_binding.cpp
         bool found_block = false;
         int block_id = set_threshold["id"].GetInt();
-        printf("block_id=%d\n", block_id);
-        for (size_t ix = 0; ix < ei_learning_blocks_size; ix++) {
-            const ei_learning_block_t learn_block = ei_learning_blocks[ix];
-            if (learn_block.blockId != block_id) continue;
+        const ei_impulse_t *impulse = ei_default_impulse.impulse;
+
+        for (size_t ix = 0; ix < impulse->postprocessing_blocks_size; ix++) {
+            const ei_postprocessing_block_t pp_block = impulse->postprocessing_blocks[ix];
+            if (pp_block.block_id != (uint32_t)block_id) continue;
+            found_block = true;
+            if (set_threshold.HasMember("min_score") && set_threshold["min_score"].IsNumber()) {
+                set_threshold_postprocessing(pp_block.block_id, pp_block.config, pp_block.type, set_threshold["min_score"].GetFloat());
+            }
+        }
+
+        for (size_t ix = 0; ix < ei_default_impulse.impulse->postprocessing_blocks_size; ix++) {
+            const ei_postprocessing_block_t processing_block = ei_default_impulse.impulse->postprocessing_blocks[ix];
+            if ((int)processing_block.block_id != block_id) continue;
 
             found_block = true;
 
-            if (learn_block.infer_fn == run_gmm_anomaly) {
-                ei_learning_block_config_anomaly_gmm_t *config = (ei_learning_block_config_anomaly_gmm_t*)learn_block.config;
+        #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+            if (processing_block.init_fn == init_object_tracking) {
+                const ei_object_tracking_config_t *old_config = (ei_object_tracking_config_t*)processing_block.config;
 
-                if (set_threshold.HasMember("min_anomaly_score") && set_threshold["min_anomaly_score"].IsNumber()) {
-                    config->anomaly_threshold = set_threshold["min_anomaly_score"].GetFloat();
+                ei_object_tracking_config_t new_config = {
+                    .implementation_version = old_config->implementation_version,
+                    .keep_grace = old_config->keep_grace,
+                    .max_observations = old_config->max_observations,
+                    .threshold = old_config->threshold,
+                    .use_iou = old_config->use_iou,
+                };
+
+                if (set_threshold.HasMember("keep_grace") && set_threshold["keep_grace"].IsNumber()) {
+                    new_config.keep_grace = (uint32_t)set_threshold["keep_grace"].GetUint64();
+                }
+                if (set_threshold.HasMember("max_observations") && set_threshold["max_observations"].IsNumber()) {
+                    new_config.max_observations = (uint16_t)set_threshold["max_observations"].GetUint64();
+                }
+                if (set_threshold.HasMember("threshold") && set_threshold["threshold"].IsNumber()) {
+                    new_config.threshold = set_threshold["threshold"].GetFloat();
+                }
+
+                EI_IMPULSE_ERROR ret = set_post_process_params(&ei_default_impulse, &new_config);
+                if (ret != EI_IMPULSE_OK) {
+                    char err_msg[1024];
+                    snprintf(err_msg, 1024, "set_threshold: set_post_process_params returned %d", ret);
+
+                    nlohmann::json err = {
+                        {"id", id},
+                        {"success", false},
+                        {"error", err_msg},
+                    };
+                    snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+                    return;
                 }
             }
-            else if (learn_block.infer_fn == run_nn_inference) {
-                ei_learning_block_config_tflite_graph_t *config = (ei_learning_block_config_tflite_graph_t*)learn_block.config;
-                if (config->classification_mode == EI_CLASSIFIER_CLASSIFICATION_MODE_OBJECT_DETECTION) {
-                    if (set_threshold.HasMember("min_score") && set_threshold["min_score"].IsNumber()) {
-                        config->threshold = set_threshold["min_score"].GetFloat();
-                        printf("min_score is now %f\n", config->threshold);
-                    }
-                }
-            }
+        #endif // #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
         }
 
         if (!found_block) {
@@ -572,9 +676,9 @@ int socket_main(char *socket_path) {
     int connfd = accept(fd, (struct sockaddr*)NULL, NULL);
     printf("Connected\n");
 
-    char *socket_buffer = (char *)malloc(STDIN_BUFFER_SIZE);
-    char *stdin_buffer = (char *)malloc(STDIN_BUFFER_SIZE);
-    char *response_buffer = (char *)malloc(STDIN_BUFFER_SIZE);
+    char *socket_buffer = (char *)calloc(STDIN_BUFFER_SIZE, sizeof(char));
+    char *stdin_buffer = (char *)calloc(STDIN_BUFFER_SIZE, sizeof(char));
+    char *response_buffer = (char *)calloc(STDIN_BUFFER_SIZE, sizeof(char));
     if (!socket_buffer || !stdin_buffer || !response_buffer) {
         printf("ERR: Could not allocate buffers\n");
         return 1;
