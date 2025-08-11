@@ -49,6 +49,10 @@ typedef struct {
 #define ALIGN(X) __align(X)
 #endif
 
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+static matrix_t freeform_output(EI_CLASSIFIER_NN_OUTPUT_COUNT, 1);
+#endif
+
 static char rapidjson_buffer[10 * 1024 * 1024] ALIGN(8);
 rapidjson::MemoryPoolAllocator<> rapidjson_allocator(rapidjson_buffer, sizeof(rapidjson_buffer));
 
@@ -161,6 +165,10 @@ void json_send_classification_response(int id,
     }
 #endif // EI_CLASSIFIER_HAS_VISUAL_ANOMALY
 
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+    nlohmann::json freeform_res(std::vector<float>(result.freeform_output->buffer, result.freeform_output->buffer + EI_CLASSIFIER_NN_OUTPUT_COUNT));
+#endif // EI_CLASSIFIER_FREEFORM_OUTPUT
+
     nlohmann::json resp = {
         {"id", id},
         {"success", true},
@@ -183,6 +191,9 @@ void json_send_classification_response(int id,
 #if EI_CLASSIFIER_HAS_ANOMALY > 0
             {"anomaly", result.anomaly},
 #endif // EI_CLASSIFIER_HAS_ANOMALY == 1
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+            {"freeform", freeform_res},
+#endif // #if EI_CLASSIFIER_FREEFORM_OUTPUT
         }},
         {"timing", {
             {"dsp", result.timing.dsp},
@@ -264,7 +275,11 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         const char *model_type = "object_detection";
     #endif // EI_CLASSIFIER_OBJECT_DETECTION_LAST_LAYER
 #else
+    #if EI_CLASSIFIER_FREEFORM_OUTPUT
+        const char *model_type = "freeform";
+    #else
         const char *model_type = "classification";
+    #endif
 #endif // EI_CLASSIFIER_OBJECT_DETECTION
 
         // keep track of configurable thresholds
@@ -398,6 +413,10 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         memset(&result, 0, sizeof(ei_impulse_result_t));
         signal_t signal;
         numpy::signal_from_buffer(&input_features[0], input_features.size(), &signal);
+
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+        result.freeform_output = &freeform_output;
+#endif // #if EI_CLASSIFIER_FREEFORM_OUTPUT
 
         bool debug = false;
         rapidjson::Value &debug_v = msg["debug"];
