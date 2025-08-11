@@ -98,6 +98,8 @@ int main(int argc, char** argv) {
         }
     }
 
+    run_classifier_init();
+
     // open the webcam...
     cv::VideoCapture camera(atoi(argv[1]));
     if (!camera.isOpened()) {
@@ -152,7 +154,17 @@ int main(int argc, char** argv) {
     printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                 result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
-    #if EI_CLASSIFIER_OBJECT_DETECTION == 1
+    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+        printf("#Object tracking results:\n");
+        for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
+            ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
+            printf("%s (ID %d) [ x: %u, y: %u, width: %u, height: %u ]\n", trace.label, (int)trace.id, trace.x, trace.y, trace.width, trace.height);
+        }
+
+        if (result.postprocessed_output.object_tracking_output.open_traces_count == 0) {
+            printf("    No objects found\n");
+        }
+    #elif EI_CLASSIFIER_OBJECT_DETECTION == 1
         printf("#Object detection results:\n");
         bool found_bb = false;
         for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
@@ -175,7 +187,7 @@ int main(int argc, char** argv) {
         }
     #endif
 
-    #if EI_CLASSIFIER_HAS_ANOMALY == 3 // visual AD
+    #if EI_CLASSIFIER_HAS_VISUAL_ANOMALY // visual AD
         printf("#Visual anomaly grid results:\n");
         for (uint32_t i = 0; i < result.visual_ad_count; i++) {
             ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
@@ -189,6 +201,29 @@ int main(int argc, char** argv) {
 
         // show the image on the window
         if (use_debug) {
+        #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+            for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
+                ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
+
+                char label[255];
+                snprintf(label, 255, "%s (ID %d)", trace.label, (int)trace.id);
+
+                cv::rectangle(cropped, cv::Rect(trace.x, trace.y, trace.width, trace.height), cv::Scalar(0, 255, 0), 2);
+                cv::putText(cropped, label, cv::Point(trace.x, trace.y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
+            }
+        #else
+            // draw the bounding boxes
+            for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
+                auto bb = result.bounding_boxes[ix];
+                if (bb.value == 0) {
+                    continue;
+                }
+
+                cv::rectangle(cropped, cv::Rect(bb.x, bb.y, bb.width, bb.height), cv::Scalar(0, 255, 0), 2);
+                cv::putText(cropped, bb.label, cv::Point(bb.x, bb.y - 10), cv::FONT_HERSHEY_SIMPLEX, 0.9, cv::Scalar(0, 255, 0), 2);
+            }
+        #endif
+
             cv::imshow("Webcam", cropped);
             // wait (10ms) for a key to be pressed
             if (cv::waitKey(10) >= 0)
