@@ -65,6 +65,45 @@ std::string read_file(const char *filename) {
     return ss;
 }
 
+// Draw bounding box overlays onto the original image (for anomaly detection / object detection)
+static void create_debug_bmp(ei_impulse_result_t *result, std::vector<float> *raw_features_ptr) {
+#if (EI_CLASSIFIER_OBJECT_DETECTION == 1) || (EI_CLASSIFIER_HAS_VISUAL_ANOMALY)
+    std::vector<float> raw_features = *raw_features_ptr;
+
+#if (EI_CLASSIFIER_OBJECT_DETECTION == 1)
+    for (size_t ix = 0; ix < result->bounding_boxes_count; ix++) {
+        auto bb = result->bounding_boxes[ix];
+        if (bb.value == 0) {
+            continue;
+        }
+
+        for (size_t x = bb.x; x < bb.x + bb.width; x++) {
+            for (size_t y = bb.y; y < bb.y + bb.height; y++) {
+                raw_features[(y * EI_CLASSIFIER_INPUT_WIDTH) + x] = (float)0x00ff00;
+            }
+        }
+    }
+#endif
+
+#if (EI_CLASSIFIER_HAS_VISUAL_ANOMALY)
+    for (size_t ix = 0; ix < result->visual_ad_count; ix++) {
+        auto bb = result->visual_ad_grid_cells[ix];
+        if (bb.value == 0) {
+            continue;
+        }
+
+        for (size_t x = bb.x; x < bb.x + bb.width; x++) {
+            for (size_t y = bb.y; y < bb.y + bb.height; y++) {
+                raw_features[(y * EI_CLASSIFIER_INPUT_WIDTH) + x] = (float)0xff0000;
+            }
+        }
+    }
+#endif
+
+    create_bitmap_file("debug.bmp", raw_features.data(), EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
+#endif
+}
+
 int main(int argc, char **argv) {
     if (argc != 2) {
         printf("Requires one parameter (a comma-separated list of raw features, or a file pointing at raw features)\n");
@@ -91,6 +130,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
+    run_classifier_init();
+
     ei_impulse_result_t result;
 
     signal_t signal;
@@ -101,11 +142,22 @@ int main(int argc, char **argv) {
         printf("run_classifier failed (%d)\n", (int)res);
         return 1;
     }
+
     // print the predictions
     printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
                 result.timing.dsp, result.timing.classification, result.timing.anomaly);
 
-#if EI_CLASSIFIER_OBJECT_DETECTION == 1
+#if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+    printf("#Object tracking results:\n");
+    for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
+        ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
+        printf("%s (ID %d) [ x: %u, y: %u, width: %u, height: %u ]\n", trace.label, (int)trace.id, trace.x, trace.y, trace.width, trace.height);
+    }
+
+    if (result.postprocessed_output.object_tracking_output.open_traces_count == 0) {
+        printf("    No objects found\n");
+    }
+#elif EI_CLASSIFIER_OBJECT_DETECTION == 1
     printf("#Object detection results:\n");
     bool bb_found = result.bounding_boxes[0].value > 0;
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
@@ -150,39 +202,5 @@ int main(int argc, char **argv) {
     printf("Anomaly prediction: %.3f\n", result.anomaly);
 #endif
 
-    // Add a debug.bmp file for object detection / visual AD results
-#if (EI_CLASSIFIER_OBJECT_DETECTION == 1) || (EI_CLASSIFIER_HAS_ANOMALY == 3)
-
-#if (EI_CLASSIFIER_OBJECT_DETECTION == 1)
-    for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
-        auto bb = result.bounding_boxes[ix];
-        if (bb.value == 0) {
-            continue;
-        }
-
-        for (size_t x = bb.x; x < bb.x + bb.width; x++) {
-            for (size_t y = bb.y; y < bb.y + bb.height; y++) {
-                raw_features[(y * EI_CLASSIFIER_INPUT_WIDTH) + x] = (float)0x00ff00;
-            }
-        }
-    }
-#endif
-
-#if (EI_CLASSIFIER_HAS_ANOMALY == 3)
-    for (size_t ix = 0; ix < result.visual_ad_count; ix++) {
-        auto bb = result.visual_ad_grid_cells[ix];
-        if (bb.value == 0) {
-            continue;
-        }
-
-        for (size_t x = bb.x; x < bb.x + bb.width; x++) {
-            for (size_t y = bb.y; y < bb.y + bb.height; y++) {
-                raw_features[(y * EI_CLASSIFIER_INPUT_WIDTH) + x] = (float)0xff0000;
-            }
-        }
-    }
-#endif
-
-    create_bitmap_file("debug.bmp", raw_features.data(), EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT);
-#endif
+    create_debug_bmp(&result, &raw_features);
 }

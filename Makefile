@@ -62,6 +62,7 @@ endif
 ifeq (${TARGET_TDA4VM},1)
 CFLAGS += -I${TIDL_TOOLS_PATH} -I${TIDL_TOOLS_PATH}/osrt_deps
 LDFLAGS +=  -L./tidl-rt/linux-aarch64 -lti_rpmsg_char -lvx_tidl_rt
+LDFLAGS += -lrt
 
 ifeq (${USE_ONNX},1)
 CFLAGS += -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime/core/session
@@ -114,6 +115,7 @@ CFLAGS += -DEI_ETHOS_LINUX
 CFLAGS += -Iedge-impulse-sdk/third_party/ethos_kernel_driver/include/
 CFLAGS += -Iedge-impulse-sdk/third_party/ethos_driver_library/include
 CXXSOURCES += edge-impulse-sdk/porting/ethos-u-driver-stack-imx/driver_library/src/ethosu.cpp
+LDFLAGS += -lrt
 endif
 
 ifeq (${USE_FULL_TFLITE},1)
@@ -122,14 +124,14 @@ CFLAGS += -Itensorflow-lite/
 CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/custom/*.cc)
 
 ifeq (${TARGET_LINUX_ARMV7},1)
-LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lflatbuffers -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo
+LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lflatbuffers -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo -lrt
 endif # TARGET_LINUX_ARMV7
 ifeq (${TARGET_LINUX_AARCH64},1)
 CFLAGS += -DDISABLEFLOAT16
-LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
+LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
 endif # TARGET_LINUX_AARCH64
 ifeq (${TARGET_LINUX_X86},1)
-LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
+LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
 endif # TARGET_LINUX_X86
 ifeq (${TARGET_MAC_X86_64},1)
 LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool
@@ -147,7 +149,7 @@ CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
 CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES # add more detailed pybind error descriptions
 CFLAGS += -Itensorflow-lite
 CFLAGS += -Iedge-impulse-sdk/third_party/gemmlowp
-LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
+LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
 ifeq (${TARGET_LINUX_AARCH64},1)
 CFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --cflags)
 LDFLAGS += -L./tflite/linux-aarch64
@@ -168,7 +170,7 @@ endif # not USE_FULL_TFLITE
 
 ifeq (${USE_MEMRYX},1)
 CFLAGS += -Iedge-impulse-sdk/third_party/gemmlowp
-LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread
+LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
 ifeq (${TARGET_LINUX_AARCH64},1)
 $(error MemryX drivers and runtime do not support AARCH64)
 else ifeq (${TARGET_LINUX_X86},1)

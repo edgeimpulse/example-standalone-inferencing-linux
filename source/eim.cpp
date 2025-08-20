@@ -12,6 +12,9 @@
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
 #include "rapidjson/stringbuffer.h"
+#include <fcntl.h>
+#include <random>
+#include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <unistd.h>
@@ -54,7 +57,41 @@ rapidjson::MemoryPoolAllocator<> rapidjson_allocator(rapidjson_buffer, sizeof(ra
 
 static runner_state_t state = { 0 };
 
+static std::string shm_name = "";
+static int shm_fd = -1;
+static float *shm_features_ptr = nullptr;
+static size_t shm_features_size = 0;
+
+static std::string make_unique_shm_name() {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    static std::uniform_int_distribution<> dis(0, 15);
+
+    std::string name = "/shm-";
+    for (int i = 0; i < 12; ++i) {
+        name += "0123456789abcdef"[dis(gen)];
+    }
+    return name;
+}
+
+static void cleanup_shm() {
+    if (shm_features_ptr) {
+        munmap(shm_features_ptr, shm_features_size);
+        shm_features_ptr = nullptr;
+    }
+    if (shm_fd >= 0) {
+        close(shm_fd);
+        shm_fd = -1;
+    }
+    if (!shm_name.empty()) {
+        shm_unlink(shm_name.c_str());
+        shm_name = std::string("");
+    }
+    shm_features_size = 0;
+}
+
 void json_send_classification_response(int id,
+                                       uint64_t json_message_handler_entry_ms,
                                        uint64_t json_parsing_ms,
                                        uint64_t stdin_ms,
                                        EI_IMPULSE_ERROR res,
@@ -80,40 +117,24 @@ void json_send_classification_response(int id,
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
     #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
 
-    // For object tracking we'll do two things:
-    // 1. we create bounding boxes for backwards compatibility (unique label per bb)
-    // 2. separate object with traces
-    nlohmann::json bb_res = nlohmann::json::array();
-    nlohmann::json tracking_res = nlohmann::json::array();
-    for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
-        ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
+        // For object tracking we'll create a separate object with traces (we also fill bounding_boxes with the raw output)
+        nlohmann::json tracking_res = nlohmann::json::array();
+        for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
+            ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
 
-        char label[100];
-        snprintf(label, 100, "%s (id=%d)", trace.label, (int)trace.id);
+            nlohmann::json tracking_json = {
+                {"object_id", trace.id},
+                {"label", trace.label},
+                {"value", trace.value == 0.0f ? 1.0f : trace.value},
+                {"x", trace.x},
+                {"y", trace.y},
+                {"width", trace.width},
+                {"height", trace.height},
+            };
+            tracking_res.push_back(tracking_json);
+        }
 
-        nlohmann::json bb_json = {
-            {"label", label},
-            {"value", trace.value == 0.0f ? 1.0f : trace.value},
-            {"x", trace.x},
-            {"y", trace.y},
-            {"width", trace.width},
-            {"height", trace.height},
-        };
-        bb_res.push_back(bb_json);
-
-        nlohmann::json tracking_json = {
-            {"object_id", trace.id},
-            {"label", trace.label},
-            {"value", trace.value == 0.0f ? 1.0f : trace.value},
-            {"x", trace.x},
-            {"y", trace.y},
-            {"width", trace.width},
-            {"height", trace.height},
-        };
-        tracking_res.push_back(tracking_json);
-    }
-
-    #else
+    #endif // EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
 
     nlohmann::json bb_res = nlohmann::json::array();
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
@@ -132,7 +153,6 @@ void json_send_classification_response(int id,
         bb_res.push_back(bb_json);
     }
 
-    #endif // EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
 #else
     #if EI_CLASSIFIER_LABEL_COUNT > 0
     nlohmann::json classify_res;
@@ -160,6 +180,8 @@ void json_send_classification_response(int id,
         visual_ad_res.push_back(bb_json);
     }
 #endif // EI_CLASSIFIER_HAS_VISUAL_ANOMALY
+
+    uint64_t total_ms = ei_read_timer_ms() - json_message_handler_entry_ms;
 
     nlohmann::json resp = {
         {"id", id},
@@ -190,6 +212,7 @@ void json_send_classification_response(int id,
             {"anomaly", result.timing.anomaly},
             {"json", json_parsing_ms},
             {"stdin", stdin_ms},
+            {"msg_handler", total_ms},
         }},
     };
     if (engine_info.str().length() > 0) {
@@ -210,10 +233,13 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
     }
 
     auto id = id_v.GetInt();
+    uint64_t start_ms = ei_read_timer_ms();
 
     rapidjson::Value& hello = msg["hello"];
     rapidjson::Value& classify_data = msg["classify"];
+    rapidjson::Value& classify_data_shm = msg["classify_shm"];
     rapidjson::Value& classify_data_continuous = msg["classify_continuous"];
+    rapidjson::Value& classify_data_continuous_shm = msg["classify_continuous_shm"];
     rapidjson::Value& set_threshold = msg["set_threshold"];
 
     if (hello.IsInt()) {
@@ -236,6 +262,8 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
             return;
         }
+
+        cleanup_shm();
 
         run_classifier_init();
 
@@ -312,6 +340,55 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         engine_properties.push_back("qnn_delegates");
     #endif
 
+        // BEGIN SHM CODE
+        const size_t shm_features_error_size = 512;
+        char shm_features_error[shm_features_error_size] = { 0 };
+
+        shm_features_size = EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE * sizeof(float);
+
+        // shm #1: shm_open
+        int shm_tries_left = 10;
+        do {
+            shm_name = make_unique_shm_name();
+            shm_fd = shm_open(shm_name.c_str(), O_CREAT | O_EXCL | O_RDWR, 0600);
+        } while (shm_fd == -1 && errno == EEXIST && --shm_tries_left > 0);  // try again if name already exists (max. 10x)
+
+        // shm #1b: shm_open failed
+        if (shm_fd == -1) {
+            snprintf(shm_features_error, shm_features_error_size, "shm_open for '%s' failed (%d)",
+                shm_name.c_str(), errno);
+        }
+
+        // shm #2: ftruncate
+        if (strlen(shm_features_error) == 0) {
+            int ftruncate_res = ftruncate(shm_fd, shm_features_size);
+            if (ftruncate_res == -1 /* error */) {
+                if (errno == 22 /* file exists, which is fine */) {
+                    // OK
+                }
+                else {
+                    snprintf(shm_features_error, shm_features_error_size, "ftruncate for '%s' failed (%d)",
+                        shm_name.c_str(), errno);
+                }
+            }
+        }
+
+        // shm #3: shm_open
+        if (strlen(shm_features_error) == 0) {
+            shm_features_ptr = (float*)mmap(nullptr, shm_features_size, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
+            if (!shm_features_ptr) {
+                snprintf(shm_features_error, shm_features_error_size, "mmap for '%s' failed",
+                    shm_name.c_str());
+            }
+        }
+
+        // shm #4: cleanup on error
+        if (strlen(shm_features_error) > 0) {
+            cleanup_shm();
+            shm_features_ptr = nullptr;
+        }
+        // END SHM CODE
+
         nlohmann::json resp = {
             {"id", id},
             {"success", true},
@@ -349,6 +426,18 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 {"properties", engine_properties},
             }}
         };
+
+        if (shm_features_ptr != nullptr) {
+            resp["features_shm"] = {
+                {"name", shm_name.c_str()},
+                {"size_bytes", shm_features_size},
+                {"type", "float32"},
+                {"elements", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE},
+            };
+        }
+        if (strlen(shm_features_error) > 0) {
+            resp["features_shm_error"] = shm_features_error;
+        }
 
         snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
 
@@ -406,7 +495,56 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         }
 
         EI_IMPULSE_ERROR res = run_classifier(&signal, &result, debug);
-        json_send_classification_response(id, json_parsing_ms, stdin_ms,
+        json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
+            res, &result, resp_buffer, resp_buffer_size);
+    }
+    else if (classify_data_shm.IsObject()) {
+        int elements = classify_data_shm["elements"].IsNumber() ?
+            classify_data_shm["elements"].GetInt() :
+            -1;
+
+        if (!shm_features_ptr) {
+            nlohmann::json err = {
+                {"id", id},
+                {"success", false},
+                {"error", "Cannot use 'classify_data_shm', shm_features_ptr is null"},
+            };
+            snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+            return;
+        }
+
+        if (elements != EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE) {
+            char err_msg[256] = { 0 };
+            if (elements == -1) {
+                snprintf(err_msg, 128, "Missing 'elements' in 'classify_data_shm'");
+            }
+            else {
+                snprintf(err_msg, 128, "Invalid value for 'classify_data_shm.elements', expected %d, but got %d",
+                    (int)EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, elements);
+            }
+
+            nlohmann::json err = {
+                {"id", id},
+                {"success", false},
+                {"error", err_msg},
+            };
+            snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+            return;
+        }
+
+        ei_impulse_result_t result;
+        memset(&result, 0, sizeof(ei_impulse_result_t));
+        signal_t signal;
+        numpy::signal_from_buffer(shm_features_ptr, EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, &signal);
+
+        bool debug = false;
+        rapidjson::Value &debug_v = msg["debug"];
+        if (debug_v.IsBool()) {
+            debug = debug_v.GetBool();
+        }
+
+        EI_IMPULSE_ERROR res = run_classifier(&signal, &result, debug);
+        json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
             res, &result, resp_buffer, resp_buffer_size);
     }
     else if (classify_data_continuous.IsArray()) {
@@ -451,7 +589,56 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         }
 
         EI_IMPULSE_ERROR res = run_classifier_continuous(&signal, &result, debug, true);
-        json_send_classification_response(id, json_parsing_ms, stdin_ms,
+        json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
+            res, &result, resp_buffer, resp_buffer_size);
+    }
+    else if (classify_data_continuous_shm.IsObject()) {
+        int elements = classify_data_continuous_shm["elements"].IsNumber() ?
+            classify_data_continuous_shm["elements"].GetInt() :
+            -1;
+
+        if (!shm_features_ptr) {
+            nlohmann::json err = {
+                {"id", id},
+                {"success", false},
+                {"error", "Cannot use 'classify_data_continuous_shm', shm_features_ptr is null"},
+            };
+            snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+            return;
+        }
+
+        if (elements != EI_CLASSIFIER_SLICE_SIZE) {
+            char err_msg[256] = { 0 };
+            if (elements == -1) {
+                snprintf(err_msg, 128, "Missing 'elements' in 'classify_data_continuous_shm'");
+            }
+            else {
+                snprintf(err_msg, 128, "Invalid value for 'classify_data_continuous_shm.elements', expected %d, but got %d",
+                    (int)EI_CLASSIFIER_SLICE_SIZE, elements);
+            }
+
+            nlohmann::json err = {
+                {"id", id},
+                {"success", false},
+                {"error", err_msg},
+            };
+            snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+            return;
+        }
+
+        ei_impulse_result_t result;
+        memset(&result, 0, sizeof(ei_impulse_result_t));
+        signal_t signal;
+        numpy::signal_from_buffer(shm_features_ptr, EI_CLASSIFIER_SLICE_SIZE, &signal);
+
+        bool debug = false;
+        rapidjson::Value &debug_v = msg["debug"];
+        if (debug_v.IsBool()) {
+            debug = debug_v.GetBool();
+        }
+
+        EI_IMPULSE_ERROR res = run_classifier_continuous(&signal, &result, debug, true);
+        json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
             res, &result, resp_buffer, resp_buffer_size);
     }
     else if (set_threshold.IsObject()) {
@@ -476,6 +663,9 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             found_block = true;
             if (set_threshold.HasMember("min_score") && set_threshold["min_score"].IsNumber()) {
                 set_threshold_postprocessing(pp_block.block_id, pp_block.config, pp_block.type, set_threshold["min_score"].GetFloat());
+            }
+            if (set_threshold.HasMember("min_anomaly_score") && set_threshold["min_anomaly_score"].IsNumber()) {
+                set_threshold_postprocessing(pp_block.block_id, pp_block.config, pp_block.type, set_threshold["min_anomaly_score"].GetFloat());
             }
         }
 
@@ -771,6 +961,7 @@ string trim(const string& str) {
 
 int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
+    atexit(cleanup_shm);
 
     if (argc < 2) {
         printf("Requires one parameter (either: '--print-info', 'stdin' or the name of a socket)\n");
