@@ -134,10 +134,10 @@ ifeq (${TARGET_LINUX_X86},1)
 LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
 endif # TARGET_LINUX_X86
 ifeq (${TARGET_MAC_X86_64},1)
-LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lrt
+LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool
 endif # TARGET_MAC_X86_64
 ifeq (${TARGET_MAC_ARM64},1)
-LDFLAGS += -L./tflite/mac-arm64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool -lrt
+LDFLAGS += -L./tflite/mac-arm64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool
 endif # TARGET_MAC_ARM64
 
 ifeq (${LINK_TFLITE_FLEX_LIBRARY},1)
