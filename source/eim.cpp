@@ -1,3 +1,38 @@
+/* The Clear BSD License
+ *
+ * Copyright (c) 2025 EdgeImpulse Inc.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted (subject to the limitations in the disclaimer
+ * below) provided that the following conditions are met:
+ *
+ *   * Redistributions of source code must retain the above copyright notice,
+ *   this list of conditions and the following disclaimer.
+ *
+ *   * Redistributions in binary form must reproduce the above copyright
+ *   notice, this list of conditions and the following disclaimer in the
+ *   documentation and/or other materials provided with the distribution.
+ *
+ *   * Neither the name of the copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from this
+ *   software without specific prior written permission.
+ *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY
+ * THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
+ * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+ * PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER
+ * IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/* Includes ---------------------------------------------------------------- */
 #include <stdio.h>
 #include <stdarg.h>
 #include <cstring>
@@ -50,6 +85,10 @@ typedef struct {
 #define ALIGN(X) __declspec(align(X))
 #elif defined __TASKING__
 #define ALIGN(X) __align(X)
+#endif
+
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+static std::vector<matrix_t> freeform_outputs;
 #endif
 
 static char rapidjson_buffer[10 * 1024 * 1024] ALIGN(8);
@@ -181,6 +220,17 @@ void json_send_classification_response(int id,
     }
 #endif // EI_CLASSIFIER_HAS_VISUAL_ANOMALY
 
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+    nlohmann::json freeform_res = nlohmann::json::array();
+    for (size_t ix = 0; ix < freeform_outputs.size(); ix++) {
+        const matrix_t& freeform_output = freeform_outputs[ix];
+        nlohmann::json freeform_entry(
+            std::vector<float>(freeform_output.buffer, freeform_output.buffer + (freeform_output.rows * freeform_output.cols))
+        );
+        freeform_res.push_back(freeform_entry);
+    }
+#endif // EI_CLASSIFIER_FREEFORM_OUTPUT
+
     uint64_t total_ms = ei_read_timer_ms() - json_message_handler_entry_ms;
 
     nlohmann::json resp = {
@@ -205,6 +255,9 @@ void json_send_classification_response(int id,
 #if EI_CLASSIFIER_HAS_ANOMALY > 0
             {"anomaly", result.anomaly},
 #endif // EI_CLASSIFIER_HAS_ANOMALY == 1
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+            {"freeform", freeform_res},
+#endif // #if EI_CLASSIFIER_FREEFORM_OUTPUT
         }},
         {"timing", {
             {"dsp", result.timing.dsp},
@@ -267,6 +320,26 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         run_classifier_init();
 
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+        freeform_outputs.reserve(ei_default_impulse.impulse->freeform_outputs_size);
+        for (size_t ix = 0; ix < ei_default_impulse.impulse->freeform_outputs_size; ++ix) {
+            freeform_outputs.emplace_back(ei_default_impulse.impulse->freeform_outputs[ix], 1);
+        }
+
+        EI_IMPULSE_ERROR set_freeform_res = ei_set_freeform_output(freeform_outputs.data(), freeform_outputs.size());
+        if (set_freeform_res != EI_IMPULSE_OK) {
+            char err_msg[128];
+            snprintf(err_msg, 128, "ei_set_freeform_output() failed with code %d", set_freeform_res);
+            nlohmann::json err = {
+                {"id", id},
+                {"success", false},
+                {"error", err_msg},
+            };
+            snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+            return;
+        }
+#endif
+
         vector<std::string> engine_properties;
         vector<std::string> labels;
         for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
@@ -292,7 +365,11 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         const char *model_type = "object_detection";
     #endif // EI_CLASSIFIER_OBJECT_DETECTION_LAST_LAYER
 #else
+    #if EI_CLASSIFIER_FREEFORM_OUTPUT
+        const char *model_type = "freeform";
+    #else
         const char *model_type = "classification";
+    #endif
 #endif // EI_CLASSIFIER_OBJECT_DETECTION
 
         // keep track of configurable thresholds
@@ -418,6 +495,11 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
                 {"model_type", model_type},
                 {"slice_size", EI_CLASSIFIER_SLICE_SIZE},
                 {"use_continuous_mode", EI_CLASSIFIER_SENSOR == EI_CLASSIFIER_SENSOR_MICROPHONE},
+#if EI_CLASSIFIER_CALIBRATION_ENABLED
+                {"has_performance_calibration", true},
+#else
+                {"has_performance_calibration", false},
+#endif // EI_CLASSIFIER_CALIBRATION_ENABLED
                 {"inferencing_engine", EI_CLASSIFIER_INFERENCING_ENGINE},
                 {"thresholds", thresholds},
             }},
