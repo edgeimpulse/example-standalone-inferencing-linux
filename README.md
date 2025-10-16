@@ -325,17 +325,29 @@ $ APP_CUSTOM=1 TARGET_AM68A=1 USE_ONNX=1 make -j
 
 For Qualcomm targets that have the Hexagon NPU on board (e.g. Dragonwing QCS6490 SoC, RB3 Gen 2 Dev Kit, Thundercomm RUBIK Pi 3, etc.), you can build the application with [TFLite QNN delegates support](https://docs.qualcomm.com/bundle/publicresource/topics/80-63442-50/tflite_delegate.html).
 
-1. Download the [AI Engine Direct SDK](https://www.qualcomm.com/developer/software/qualcomm-ai-engine-direct-sdk)
-1. Extract it and export the path to the SDK root, for example:
+1. Install the AI Engine Direct SDK:
+    * If you're on a Dragonwing development board running Ubuntu 24; open a terminal (on your development board) and run:
 
-    ```
-    export QNN_SDK_ROOT=/home/user/qairt/2.36.0.250627/
-    ```
+        ```bash
+        # Install the SDK
+        wget -qO- https://cdn.edgeimpulse.com/qc-ai-docs/device-setup/install_ai_runtime_sdk.sh | bash
 
-1. Go to the **Deployment** page in the Edge Impulse Studio.
-1. Select the 'C++ library' and choose optimization `Quantized (int8)`.
-1. Build the library and copy the folders into this repository.
-1. Build your application with `USE_QUALCOMM_QNN=1`, for example the EIM:
+        # Use the SDK in your current session
+        source ~/.bash_profile
+        ```
+
+    * If you're on another OS:
+        1. Download the [AI Engine Direct SDK](https://www.qualcomm.com/developer/software/qualcomm-ai-engine-direct-sdk)
+        2. Extract it and export the path to the SDK root, for example:
+
+            ```bash
+            export QNN_SDK_ROOT=/home/user/qairt/2.36.0.250627/
+            ```
+
+2. Go to the **Deployment** page in the Edge Impulse Studio.
+3. Select the 'C++ library' and choose optimization `Quantized (int8)`.
+4. Build the library and copy the folders into this repository.
+5. Build your application with `USE_QUALCOMM_QNN=1`, for example the EIM:
 
     ```
     $ APP_EIM=1 TARGET_LINUX_AARCH64=1 USE_QUALCOMM_QNN=1 make -j
