@@ -84,3 +84,7 @@ This is where inference is done, and the QNN delegates are loaded:
 ```
 edge-impulse-sdk/classifier/inferencing_engines/tflite_full.h
 ```
+
+## Python?
+
+Works fine. See [python/](python/) - uses exactly same model.
