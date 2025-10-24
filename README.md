@@ -56,7 +56,7 @@ To collect data from the camera or microphone, follow the [getting started guide
 To collect data from other sensors you'll need to write some code to collect the data from an external sensor, wrap it in the Edge Impulse Data Acquisition format, and upload the data to the Ingestion service. [Here's an end-to-end example](https://github.com/edgeimpulse/example-standalone-inferencing-linux/blob/master/source/collect.cpp) that you can build via:
 
 ```
-$ APP_COLLECT=1 make -j
+$ APP_COLLECT=1 make -j`nproc`
 ```
 
 ## Classifying data
@@ -74,7 +74,7 @@ To build an application:
 1. Build the application via:
 
     ```
-    $ APP_CUSTOM=1 make -j
+    $ APP_CUSTOM=1 make -j`nproc`
     ```
 
     Replace `APP_CUSTOM=1` with the application you want to build. See 'Hardware acceleration' below for the hardware specific flags. You probably want these.
@@ -96,7 +96,7 @@ For many targets there is hardware acceleration available. To enable this:
 Build with the following flags:
 
 ```
-$ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
+$ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j`nproc`
 ```
 
 **AARCH64 Linux targets**
@@ -114,7 +114,7 @@ $ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
 1. Build with the following flags:
 
     ```
-    $ APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1 CC=clang CXX=clang++ make -j
+    $ APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1 CC=clang CXX=clang++ make -j`nproc`
     ```
 
 **x86 Linux targets**
@@ -122,7 +122,7 @@ $ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j
 Build with the following flags:
 
 ```
-$ APP_CUSTOM=1 TARGET_LINUX_X86=1 USE_FULL_TFLITE=1 make -j
+$ APP_CUSTOM=1 TARGET_LINUX_X86=1 USE_FULL_TFLITE=1 make -j`nproc`
 ```
 
 **Intel-based Macs**
@@ -130,7 +130,7 @@ $ APP_CUSTOM=1 TARGET_LINUX_X86=1 USE_FULL_TFLITE=1 make -j
 Build with the following flags:
 
 ```
-$ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
+$ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j`nproc`
 ```
 
 **Apple silicon based Macs**
@@ -138,7 +138,7 @@ $ APP_CUSTOM=1 TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1 make -j
 Build with the following flags:
 
 ```
-$ APP_CUSTOM=1 TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1 make -j
+$ APP_CUSTOM=1 TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1 make -j`nproc`
 ```
 
 ### AARCH64 with AI Acceleration
@@ -161,7 +161,7 @@ On the NVIDIA Jetson Orin you can also build with support for TensorRT, this ful
 1. Build your application with:
 
     ```
-    $ APP_CUSTOM=1 TARGET_JETSON_ORIN=1 make -j
+    $ APP_CUSTOM=1 TARGET_JETSON_ORIN=1 make -j`nproc`
     ```
 
 
@@ -183,7 +183,7 @@ On the NVIDIA Jetson you can also build with support for TensorRT, this fully le
 1. Build your application with:
 
     ```
-    $ APP_CUSTOM=1 TARGET_JETSON=1 make -j
+    $ APP_CUSTOM=1 TARGET_JETSON=1 make -j`nproc`
     ```
 
 Note that there is significant ramp up time required for TensorRT. The first time you run a new model the model needs to be optimized - which might take up to 30 seconds, then on every startup the model needs to be loaded in - which might take up to 5 seconds. After this, the GPU seems to be warming up, so expect full performance about 2 minutes in. To do a fair performance comparison you probably want to use the custom application (no camera / microphone overhead) and run the classification in a loop.
@@ -205,7 +205,7 @@ On the Renesas RZ/V2L you can also build with support for DRP-AI using DRPAI TVM
 1. Build your application with:
 
     ```
-    $ USE_TVM=1 TARGET_RENESAS_RZV2L=1 make -j
+    $ USE_TVM=1 TARGET_RENESAS_RZV2L=1 make -j`nproc`
     ```
 
 #### Renesas RZ/V2L - DRP-AI
@@ -222,7 +222,7 @@ On the Renesas RZ/V2L you can also build with support for DRP-AI, this fully lev
 1. Build your application with:
 
     ```
-    $ TARGET_RENESAS_RZV2L=1 make -j
+    $ TARGET_RENESAS_RZV2L=1 make -j`nproc`
     ```
 
 #### Renesas RZ/G2L
@@ -235,7 +235,7 @@ To build for the Renesas RZ/G2L is as follows:
 1. Build your application with:
 
     ```
-    $ TARGET_RENESAS_RZG2L=1 make -j
+    $ TARGET_RENESAS_RZG2L=1 make -j`nproc`
     ```
 
 #### BrainChip AKD1000
@@ -258,7 +258,7 @@ To build the application with support for AKD1000 NSoC, you need a Python develo
 1. Build your application with `USE_AKIDA=1`, for example:
 
     ```
-    $ USE_AKIDA=1 APP_EIM=1 TARGET_LINUX_AARCH64=1 make -j
+    $ USE_AKIDA=1 APP_EIM=1 TARGET_LINUX_AARCH64=1 make -j`nproc`
     ```
 
 In case of any issues during runtime, check [Troubleshooting](https://docs.edgeimpulse.com/docs/development-platforms/officially-supported-ai-accelerators/akd1000#troubleshooting) section in our official documentation for AKD1000 NSoc.
@@ -278,13 +278,13 @@ You can also build with support for TIDL, this fully leverages the Deep Learning
 3. Build the library and copy the folders into this repository.
 4. Build your (.eim) application:
     ```
-    $ APP_EIM=1 TARGET_TDA4VM=1 make -j
+    $ APP_EIM=1 TARGET_TDA4VM=1 make -j`nproc`
     ```
 
 To build for ONNX runtime:
 
 ```
-$ APP_EIM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
+$ APP_EIM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j`nproc`
 ```
 
 ##### TI AM62A
@@ -295,13 +295,13 @@ $ APP_EIM=1 TARGET_TDA4VM=1 USE_ONNX=1 make -j
 4. Build your (.eim) application:
 
     ```
-    $ APP_EIM=1 TARGET_AM62A=1 make -j
+    $ APP_EIM=1 TARGET_AM62A=1 make -j`nproc`
     ```
 
 To build for ONNX runtime:
 
 ```
-$ APP_EIM=1 TARGET_AM62A=1 USE_ONNX=1 make -j
+$ APP_EIM=1 TARGET_AM62A=1 USE_ONNX=1 make -j`nproc`
 ```
 
 ##### TI AM68A
@@ -312,13 +312,13 @@ $ APP_EIM=1 TARGET_AM62A=1 USE_ONNX=1 make -j
 4. Build your (.eim) application:
 
     ```
-    $ APP_EIM=1 TARGET_AM68A=1 make -j
+    $ APP_EIM=1 TARGET_AM68A=1 make -j`nproc`
     ```
 
 To build for ONNX runtime:
 
 ```
-$ APP_CUSTOM=1 TARGET_AM68A=1 USE_ONNX=1 make -j
+$ APP_CUSTOM=1 TARGET_AM68A=1 USE_ONNX=1 make -j`nproc`
 ```
 
 #### Qualcomm SoCs with Hexagon NPU
@@ -350,7 +350,7 @@ For Qualcomm targets that have the Hexagon NPU on board (e.g. Dragonwing QCS6490
 5. Build your application with `USE_QUALCOMM_QNN=1`, for example the EIM:
 
     ```
-    $ APP_EIM=1 TARGET_LINUX_AARCH64=1 USE_QUALCOMM_QNN=1 make -j
+    $ APP_EIM=1 TARGET_LINUX_AARCH64=1 USE_QUALCOMM_QNN=1 make -j`nproc`
     ```
 
 ## Building .eim files
@@ -358,7 +358,7 @@ For Qualcomm targets that have the Hexagon NPU on board (e.g. Dragonwing QCS6490
 To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:
 
 ```
-$ APP_EIM=1 make -j
+$ APP_EIM=1 make -j`nproc`
 ```
 
 The model will be placed in `build/model.eim` and can be used directly by your application.
