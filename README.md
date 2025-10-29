@@ -30,7 +30,7 @@ Build this application:
 ```bash
 rm -f source/*.o
 APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 USE_QUALCOMM_QNN=1 make -j`nproc`
-./build/custom features.txt
+./build/custom iq9-features.txt
 
 # ====== DDR bandwidth summary ======
 # spill_bytes=0
@@ -49,7 +49,7 @@ APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 USE_QUALCOMM_QNN=1 make -j`nproc`
 Run with lldb:
 
 ```
-lldb -o run -- ./build/custom features.txt
+lldb -o run -- ./build/custom iq9-features.txt
 
 # Process 3887 launched: '/home/ubuntu/example-standalone-inferencing-linux/build/custom' (aarch64)
 # Process 3887 stopped
@@ -78,7 +78,7 @@ Can run same binary w/ XNNPACK rather than QNN:
 ```bash
 APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 make clean
 APP_CUSTOM=1 TARGET_LINUX_AARCH64=1 make -j`nproc`
-./build/custom features.txt
+./build/custom iq9-features.txt
 
 # Will run and not have any segfault / busfault
 ```
