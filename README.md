@@ -18,6 +18,10 @@ $ apt-cache policy libqnn1
 # Then downloaded extra headers etc not in apt via:
 $ wget -qO- https://cdn.edgeimpulse.com/qc-ai-docs/device-setup/install_ai_runtime_sdk.sh | bash
 
+# Set QAIRT root folder
+export QNN_SDK_ROOT="/home/ubuntu/qairt/2.38.0.250901"
+
+
 # THIS IS A WORKING QNN SETUP! Python LiteRT w/ QNN works (just like other QNN stuff)
 ```
 
