@@ -240,14 +240,8 @@ void classify_current_buffer() {
         return;
     }
 
-    printf("%d ms. ", result.timing.dsp + result.timing.classification);
-    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-        printf("%s: %.05f", result.classification[ix].label, result.classification[ix].value);
-        if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
-            printf(", ");
-        }
-    }
-    printf("\n");
+    // Print results, see edge-impulse-sdk/classifier/ei_print_results.h
+    ei_print_results(&ei_default_impulse, &result);
 }
 
 /**
@@ -283,6 +277,16 @@ int main(int argc, char **argv)
     ::signal(SIGINT, close_alsa);
 
     run_classifier_init();
+
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+    // for "freeform" outputs, the application needs to allocate the memory (one matrix_t per output tensor)
+    std::vector<matrix_t> freeform_outputs;
+    freeform_outputs.reserve(ei_default_impulse.impulse->freeform_outputs_size);
+    for (size_t ix = 0; ix < ei_default_impulse.impulse->freeform_outputs_size; ++ix) {
+        freeform_outputs.emplace_back(ei_default_impulse.impulse->freeform_outputs[ix], 1);
+    }
+    ei_set_freeform_output(freeform_outputs.data(), freeform_outputs.size());
+#endif // EI_CLASSIFIER_FREEFORM_OUTPUT
 
     while (1) {
         int x = snd_pcm_readi(capture_handle, classifier_slice_buffer, EI_CLASSIFIER_SLICE_SIZE);

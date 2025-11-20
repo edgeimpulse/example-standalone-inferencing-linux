@@ -132,6 +132,16 @@ int main(int argc, char **argv) {
 
     run_classifier_init();
 
+#if EI_CLASSIFIER_FREEFORM_OUTPUT
+    // for "freeform" outputs, the application needs to allocate the memory (one matrix_t per output tensor)
+    std::vector<matrix_t> freeform_outputs;
+    freeform_outputs.reserve(ei_default_impulse.impulse->freeform_outputs_size);
+    for (size_t ix = 0; ix < ei_default_impulse.impulse->freeform_outputs_size; ++ix) {
+        freeform_outputs.emplace_back(ei_default_impulse.impulse->freeform_outputs[ix], 1);
+    }
+    ei_set_freeform_output(freeform_outputs.data(), freeform_outputs.size());
+#endif // EI_CLASSIFIER_FREEFORM_OUTPUT
+
     ei_impulse_result_t result;
 
     signal_t signal;
@@ -143,64 +153,8 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    // print the predictions
-    printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-                result.timing.dsp, result.timing.classification, result.timing.anomaly);
-
-#if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
-    printf("#Object tracking results:\n");
-    for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
-        ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
-        printf("%s (ID %d) [ x: %u, y: %u, width: %u, height: %u ]\n", trace.label, (int)trace.id, trace.x, trace.y, trace.width, trace.height);
-    }
-
-    if (result.postprocessed_output.object_tracking_output.open_traces_count == 0) {
-        printf("    No objects found\n");
-    }
-#elif EI_CLASSIFIER_OBJECT_DETECTION == 1
-    printf("#Object detection results:\n");
-    bool bb_found = result.bounding_boxes[0].value > 0;
-    for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
-        auto bb = result.bounding_boxes[ix];
-        if (bb.value == 0) {
-            continue;
-        }
-
-        printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
-    }
-
-    if (!bb_found) {
-        printf("    No objects found\n");
-    }
-
-#elif (EI_CLASSIFIER_LABEL_COUNT == 1) && (!EI_CLASSIFIER_HAS_ANOMALY) // regression
-    printf("#Regression results:\n");
-    printf("    %s: ", result.classification[0].label);
-    printf("%.5f", result.classification[0].value);
-    printf("\n");
-
-#elif EI_CLASSIFIER_LABEL_COUNT > 1 // if there is only one label, this is an anomaly only
-    printf("#Classification results:\n");
-    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-        printf("    %s: ", result.classification[ix].label);
-        printf("%.5f", result.classification[ix].value);
-        printf("\n");
-    }
-#endif
-#if EI_CLASSIFIER_HAS_VISUAL_ANOMALY // visual AD
-    printf("#Visual anomaly grid results:\n");
-    for (uint32_t i = 0; i < result.visual_ad_count; i++) {
-        ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
-        if (bb.value == 0) {
-            continue;
-        }
-
-        printf("%s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
-    }
-    printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
-#elif (EI_CLASSIFIER_HAS_ANOMALY > 0) // except for visual AD
-    printf("Anomaly prediction: %.3f\n", result.anomaly);
-#endif
+    // Print results, see edge-impulse-sdk/classifier/ei_print_results.h
+    ei_print_results(&ei_default_impulse, &result);
 
     create_debug_bmp(&result, &raw_features);
 }
