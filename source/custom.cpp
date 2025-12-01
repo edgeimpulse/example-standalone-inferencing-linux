@@ -139,7 +139,11 @@ int main(int argc, char **argv) {
     for (size_t ix = 0; ix < ei_default_impulse.impulse->freeform_outputs_size; ++ix) {
         freeform_outputs.emplace_back(ei_default_impulse.impulse->freeform_outputs[ix], 1);
     }
-    ei_set_freeform_output(freeform_outputs.data(), freeform_outputs.size());
+    EI_IMPULSE_ERROR set_freeform_res = ei_set_freeform_output(freeform_outputs.data(), freeform_outputs.size());
+    if (set_freeform_res != EI_IMPULSE_OK) {
+        printf("ei_set_freeform_output failed with %d\n", set_freeform_res);
+        exit(1);
+    }
 #endif // EI_CLASSIFIER_FREEFORM_OUTPUT
 
     ei_impulse_result_t result;

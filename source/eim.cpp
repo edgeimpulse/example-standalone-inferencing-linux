@@ -41,6 +41,7 @@
 // #include <thread>
 #include <chrono>
 #include <vector>
+#include <signal.h>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include "edge-impulse-sdk/classifier/postprocessing/ei_postprocessing_common.h"
 #include "json/json.hpp"
@@ -56,7 +57,7 @@
 
 using namespace std;
 
-#define STDIN_BUFFER_SIZE       (10 * 1024 * 1024)
+#define STDIN_BUFFER_SIZE       (32 * 1024 * 1024)
 #if (EI_CLASSIFIER_INFERENCING_ENGINE == EI_CLASSIFIER_AKIDA)
 #include "pybind11/embed.h"
 namespace py = pybind11;
@@ -96,10 +97,20 @@ rapidjson::MemoryPoolAllocator<> rapidjson_allocator(rapidjson_buffer, sizeof(ra
 
 static runner_state_t state = { 0 };
 
-static std::string shm_name = "";
-static int shm_fd = -1;
-static float *shm_features_ptr = nullptr;
-static size_t shm_features_size = 0;
+typedef enum {
+    SHM_TENSOR_INPUT,
+    SHM_TENSOR_OUTPUT
+} shm_io_tensor_type;
+
+typedef struct {
+    std::string name;
+    int fd;
+    float *features_ptr;
+    size_t features_size;
+    shm_io_tensor_type tensor_type;
+    uint8_t tensor_index;
+} shm_t;
+static std::vector<shm_t> mapped_shms;
 
 static std::string make_unique_shm_name() {
     static std::random_device rd;
@@ -113,20 +124,103 @@ static std::string make_unique_shm_name() {
     return name;
 }
 
-static void cleanup_shm() {
-    if (shm_features_ptr) {
-        munmap(shm_features_ptr, shm_features_size);
-        shm_features_ptr = nullptr;
+static void cleanup_shm(shm_t *shm) {
+    if (shm->features_ptr) {
+        munmap(shm->features_ptr, shm->features_size);
+        shm->features_ptr = nullptr;
     }
-    if (shm_fd >= 0) {
-        close(shm_fd);
-        shm_fd = -1;
+    if (shm->fd >= 0) {
+        close(shm->fd);
+        shm->fd = -1;
     }
-    if (!shm_name.empty()) {
-        shm_unlink(shm_name.c_str());
-        shm_name = std::string("");
+    if (!shm->name.empty()) {
+        shm_unlink(shm->name.c_str());
+        shm->name = std::string("");
     }
-    shm_features_size = 0;
+    shm->features_size = 0;
+}
+
+static void cleanup_all_shm() {
+    for (auto& shm : mapped_shms) {
+        cleanup_shm(&shm);
+    }
+
+    mapped_shms.clear();
+}
+
+static shm_t *find_shm(shm_io_tensor_type tensor_type, uint8_t tensor_index) {
+    shm_t *shm = nullptr;
+    for (auto& it : mapped_shms) {
+        if (it.tensor_type == tensor_type && it.tensor_index == tensor_index) {
+            shm = &it;
+            break;
+        }
+    }
+    return shm;
+}
+
+static int create_shm(
+    size_t features_size,
+    shm_io_tensor_type tensor_type,
+    uint8_t tensor_index,
+    char *shm_features_error,
+    const size_t shm_features_error_size
+) {
+    memset(shm_features_error, 0, shm_features_error_size);
+
+    shm_t shm = {
+        .name = "",
+        .fd = -1,
+        .features_ptr = nullptr,
+        .features_size = features_size * sizeof(float),
+        .tensor_type = tensor_type,
+        .tensor_index = tensor_index
+    };
+
+    // shm #1: shm_open
+    int shm_tries_left = 10;
+    do {
+        shm.name = make_unique_shm_name();
+        shm.fd = shm_open(shm.name.c_str(), O_CREAT | O_EXCL | O_RDWR, 0600);
+    } while (shm.fd == -1 && errno == EEXIST && --shm_tries_left > 0);  // try again if name already exists (max. 10x)
+
+    // shm #1b: shm_open failed
+    if (shm.fd == -1) {
+        snprintf(shm_features_error, shm_features_error_size, "shm_open for '%s' failed (%d)",
+            shm.name.c_str(), errno);
+    }
+
+    // shm #2: ftruncate
+    if (strlen(shm_features_error) == 0) {
+        int ftruncate_res = ftruncate(shm.fd, shm.features_size);
+        if (ftruncate_res == -1 /* error */) {
+            if (errno == 22 /* file exists, which is fine */) {
+                // OK
+            }
+            else {
+                snprintf(shm_features_error, shm_features_error_size, "ftruncate for '%s' failed (%d)",
+                    shm.name.c_str(), errno);
+            }
+        }
+    }
+
+    // shm #3: shm_open
+    if (strlen(shm_features_error) == 0) {
+        shm.features_ptr = (float*)mmap(nullptr, shm.features_size, PROT_READ|PROT_WRITE, MAP_SHARED, shm.fd, 0);
+        if (!shm.features_ptr) {
+            snprintf(shm_features_error, shm_features_error_size, "mmap for '%s' failed",
+                shm.name.c_str());
+        }
+    }
+
+    // shm #4: cleanup on error
+    if (strlen(shm_features_error) > 0) {
+        cleanup_shm(&shm);
+        return -1;
+    }
+
+    mapped_shms.push_back(shm);
+    return 0;
 }
 
 void json_send_classification_response(int id,
@@ -135,6 +229,7 @@ void json_send_classification_response(int id,
                                        uint64_t stdin_ms,
                                        EI_IMPULSE_ERROR res,
                                        ei_impulse_result_t *result_ptr,
+                                       bool use_shm,
                                        char *resp_buffer,
                                        size_t resp_buffer_size)
 {
@@ -221,13 +316,23 @@ void json_send_classification_response(int id,
 #endif // EI_CLASSIFIER_HAS_VISUAL_ANOMALY
 
 #if EI_CLASSIFIER_FREEFORM_OUTPUT
-    nlohmann::json freeform_res = nlohmann::json::array();
-    for (size_t ix = 0; ix < freeform_outputs.size(); ix++) {
-        const matrix_t& freeform_output = freeform_outputs[ix];
-        nlohmann::json freeform_entry(
-            std::vector<float>(freeform_output.buffer, freeform_output.buffer + (freeform_output.rows * freeform_output.cols))
-        );
-        freeform_res.push_back(freeform_entry);
+    nlohmann::json freeform_res;
+
+    if (use_shm) {
+        // shm -> already in memory
+        freeform_res = "shm";
+    }
+    else {
+        // otherwise -> copy it back
+        freeform_res = nlohmann::json::array();
+        for (size_t ix = 0; ix < freeform_outputs.size(); ix++) {
+            const matrix_t& freeform_output = freeform_outputs[ix];
+
+            nlohmann::json freeform_entry(
+                std::vector<float>(freeform_output.buffer, freeform_output.buffer + (freeform_output.rows * freeform_output.cols))
+            );
+            freeform_res.push_back(freeform_entry);
+        }
     }
 #endif // EI_CLASSIFIER_FREEFORM_OUTPUT
 
@@ -271,7 +376,22 @@ void json_send_classification_response(int id,
     if (engine_info.str().length() > 0) {
         resp["info"] = engine_info.str();
     }
-    snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
+
+    int bytes_written = snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
+    if (bytes_written > resp_buffer_size) {
+        char err_msg[512];
+        snprintf(err_msg, 512, "Classification response (%d bytes) was larger than max response buffer size (%d bytes)",
+            (int)bytes_written,
+            (int)resp_buffer_size);
+
+        nlohmann::json err = {
+            {"id", id},
+            {"success", false},
+            {"error", err_msg},
+        };
+        snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+        return;
+    }
 }
 
 void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t resp_buffer_size, uint64_t json_parsing_ms, uint64_t stdin_ms) {
@@ -316,14 +436,59 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             return;
         }
 
-        cleanup_shm();
+        cleanup_all_shm();
 
         run_classifier_init();
 
+        const ei_impulse_t *impulse = ei_default_impulse.impulse;
+
+        // create shared memory (input, and freeform outputs)
+        const size_t shm_features_error_size = 512;
+        char shm_features_error[shm_features_error_size] = { 0 };
+        int shm_err = 0;
+
+        shm_err = create_shm(EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, SHM_TENSOR_INPUT, 0, shm_features_error, shm_features_error_size);
+        if (shm_err == 0) {
+            for (size_t ix = 0; ix < impulse->freeform_outputs_size; ix++) {
+                shm_err = create_shm(impulse->freeform_outputs[ix], SHM_TENSOR_OUTPUT, ix, shm_features_error, shm_features_error_size);
+                if (shm_err != 0) {
+                    break;
+                }
+            }
+        }
+
+        if (shm_err != 0) {
+            cleanup_all_shm();
+        }
+        // end creating shared memory
+
 #if EI_CLASSIFIER_FREEFORM_OUTPUT
         freeform_outputs.reserve(ei_default_impulse.impulse->freeform_outputs_size);
+
         for (size_t ix = 0; ix < ei_default_impulse.impulse->freeform_outputs_size; ++ix) {
-            freeform_outputs.emplace_back(ei_default_impulse.impulse->freeform_outputs[ix], 1);
+            float *buffer = nullptr;
+
+            // if we're using shared memory... then create the freeform_outputs matrices using the shared memory as storage
+            // (so we don't need to map anything back later)
+            if (shm_err == 0) {
+                shm_t *shm_output_tensor = find_shm(SHM_TENSOR_OUTPUT, ix);
+                if (!shm_output_tensor) {
+                    char err_msg[128];
+                    snprintf(err_msg, 128, "Cannot find shm output tensor %d (but shm_err == 0)", (int)ix);
+
+                    nlohmann::json err = {
+                        {"id", id},
+                        {"success", false},
+                        {"error", err_msg},
+                    };
+                    snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+                    return;
+                }
+
+                buffer = shm_output_tensor->features_ptr;
+            }
+
+            freeform_outputs.emplace_back(ei_default_impulse.impulse->freeform_outputs[ix], 1, buffer);
         }
 
         EI_IMPULSE_ERROR set_freeform_res = ei_set_freeform_output(freeform_outputs.data(), freeform_outputs.size());
@@ -375,7 +540,6 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         // keep track of configurable thresholds
         // this needs to be kept in sync with jobs-container/cpp-exporter/wasm/emcc_binding.cpp
         nlohmann::json thresholds = nlohmann::json::array();
-        const ei_impulse_t *impulse = ei_default_impulse.impulse;
 
         for (size_t ix = 0; ix < impulse->postprocessing_blocks_size; ix++) {
             const ei_postprocessing_block_t pp_block = impulse->postprocessing_blocks[ix];
@@ -416,55 +580,6 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
     #if EI_CLASSIFIER_USE_QNN_DELEGATES == 1
         engine_properties.push_back("qnn_delegates");
     #endif
-
-        // BEGIN SHM CODE
-        const size_t shm_features_error_size = 512;
-        char shm_features_error[shm_features_error_size] = { 0 };
-
-        shm_features_size = EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE * sizeof(float);
-
-        // shm #1: shm_open
-        int shm_tries_left = 10;
-        do {
-            shm_name = make_unique_shm_name();
-            shm_fd = shm_open(shm_name.c_str(), O_CREAT | O_EXCL | O_RDWR, 0600);
-        } while (shm_fd == -1 && errno == EEXIST && --shm_tries_left > 0);  // try again if name already exists (max. 10x)
-
-        // shm #1b: shm_open failed
-        if (shm_fd == -1) {
-            snprintf(shm_features_error, shm_features_error_size, "shm_open for '%s' failed (%d)",
-                shm_name.c_str(), errno);
-        }
-
-        // shm #2: ftruncate
-        if (strlen(shm_features_error) == 0) {
-            int ftruncate_res = ftruncate(shm_fd, shm_features_size);
-            if (ftruncate_res == -1 /* error */) {
-                if (errno == 22 /* file exists, which is fine */) {
-                    // OK
-                }
-                else {
-                    snprintf(shm_features_error, shm_features_error_size, "ftruncate for '%s' failed (%d)",
-                        shm_name.c_str(), errno);
-                }
-            }
-        }
-
-        // shm #3: shm_open
-        if (strlen(shm_features_error) == 0) {
-            shm_features_ptr = (float*)mmap(nullptr, shm_features_size, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
-            if (!shm_features_ptr) {
-                snprintf(shm_features_error, shm_features_error_size, "mmap for '%s' failed",
-                    shm_name.c_str());
-            }
-        }
-
-        // shm #4: cleanup on error
-        if (strlen(shm_features_error) > 0) {
-            cleanup_shm();
-            shm_features_ptr = nullptr;
-        }
-        // END SHM CODE
 
         nlohmann::json resp = {
             {"id", id},
@@ -509,16 +624,36 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             }}
         };
 
-        if (shm_features_ptr != nullptr) {
-            resp["features_shm"] = {
-                {"name", shm_name.c_str()},
-                {"size_bytes", shm_features_size},
-                {"type", "float32"},
-                {"elements", EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE},
-            };
-        }
+
         if (strlen(shm_features_error) > 0) {
             resp["features_shm_error"] = shm_features_error;
+        }
+        else {
+            shm_t *shm_input_tensor = find_shm(SHM_TENSOR_INPUT, 0);
+            if (shm_input_tensor && shm_input_tensor->features_ptr != nullptr) {
+                resp["features_shm"] = {
+                    {"name", shm_input_tensor->name.c_str()},
+                    {"size_bytes", shm_input_tensor->features_size},
+                    {"type", "float32"},
+                    {"elements", shm_input_tensor->features_size / sizeof(float)},
+                };
+            }
+            if (impulse->freeform_outputs_size > 0) {
+                nlohmann::json output_tensors_shm = nlohmann::json::array();
+                for (size_t ix = 0; ix < impulse->freeform_outputs_size; ix++) {
+                    shm_t *shm_output_tensor = find_shm(SHM_TENSOR_OUTPUT, ix);
+                    if (!shm_output_tensor) continue;
+                    nlohmann::json output = {
+                        {"index", shm_output_tensor->tensor_index},
+                        {"name", shm_output_tensor->name.c_str()},
+                        {"size_bytes", shm_output_tensor->features_size},
+                        {"type", "float32"},
+                        {"elements", shm_output_tensor->features_size / sizeof(float)},
+                    };
+                    output_tensors_shm.push_back(output);
+                }
+                resp["freeform_output_shm"] = output_tensors_shm;
+            }
         }
 
         snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
@@ -578,18 +713,19 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         EI_IMPULSE_ERROR res = run_classifier(&signal, &result, debug);
         json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
-            res, &result, resp_buffer, resp_buffer_size);
+            res, &result, false /* use_shm */, resp_buffer, resp_buffer_size);
     }
     else if (classify_data_shm.IsObject()) {
         int elements = classify_data_shm["elements"].IsNumber() ?
             classify_data_shm["elements"].GetInt() :
             -1;
 
-        if (!shm_features_ptr) {
+        shm_t *shm = find_shm(SHM_TENSOR_INPUT, 0);
+        if (!shm) {
             nlohmann::json err = {
                 {"id", id},
                 {"success", false},
-                {"error", "Cannot use 'classify_data_shm', shm_features_ptr is null"},
+                {"error", "Cannot use 'classify_data_shm', cannot find shm input tensor with ix=0"},
             };
             snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
             return;
@@ -617,7 +753,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         ei_impulse_result_t result;
         memset(&result, 0, sizeof(ei_impulse_result_t));
         signal_t signal;
-        numpy::signal_from_buffer(shm_features_ptr, EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, &signal);
+        numpy::signal_from_buffer(shm->features_ptr, EI_CLASSIFIER_DSP_INPUT_FRAME_SIZE, &signal);
 
         bool debug = false;
         rapidjson::Value &debug_v = msg["debug"];
@@ -627,7 +763,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         EI_IMPULSE_ERROR res = run_classifier(&signal, &result, debug);
         json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
-            res, &result, resp_buffer, resp_buffer_size);
+            res, &result, true /* use_shm */, resp_buffer, resp_buffer_size);
     }
     else if (classify_data_continuous.IsArray()) {
         vector<float> input_features;
@@ -672,18 +808,19 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         EI_IMPULSE_ERROR res = run_classifier_continuous(&signal, &result, debug, true);
         json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
-            res, &result, resp_buffer, resp_buffer_size);
+            res, &result, false /* use_shm */, resp_buffer, resp_buffer_size);
     }
     else if (classify_data_continuous_shm.IsObject()) {
         int elements = classify_data_continuous_shm["elements"].IsNumber() ?
             classify_data_continuous_shm["elements"].GetInt() :
             -1;
 
-        if (!shm_features_ptr) {
+        shm_t *shm = find_shm(SHM_TENSOR_INPUT, 0);
+        if (!shm) {
             nlohmann::json err = {
                 {"id", id},
                 {"success", false},
-                {"error", "Cannot use 'classify_data_continuous_shm', shm_features_ptr is null"},
+                {"error", "Cannot use 'classify_data_continuous_shm', cannot find shm input tensor with ix=0"},
             };
             snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
             return;
@@ -711,7 +848,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
         ei_impulse_result_t result;
         memset(&result, 0, sizeof(ei_impulse_result_t));
         signal_t signal;
-        numpy::signal_from_buffer(shm_features_ptr, EI_CLASSIFIER_SLICE_SIZE, &signal);
+        numpy::signal_from_buffer(shm->features_ptr, EI_CLASSIFIER_SLICE_SIZE, &signal);
 
         bool debug = false;
         rapidjson::Value &debug_v = msg["debug"];
@@ -721,7 +858,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         EI_IMPULSE_ERROR res = run_classifier_continuous(&signal, &result, debug, true);
         json_send_classification_response(id, start_ms, json_parsing_ms, stdin_ms,
-            res, &result, resp_buffer, resp_buffer_size);
+            res, &result, true /* use_shm */, resp_buffer, resp_buffer_size);
     }
     else if (set_threshold.IsObject()) {
         if (!set_threshold.HasMember("id") || !set_threshold["id"].IsInt()) {
@@ -1041,9 +1178,21 @@ string trim(const string& str) {
     return str.substr(first, (last - first + 1));
 }
 
+static void on_signal(int sig){
+    cleanup_all_shm();
+    _exit(128 + sig);
+}
+
 int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
-    atexit(cleanup_shm);
+
+    atexit(cleanup_all_shm);
+    struct sigaction sa = { 0 };
+    sa.sa_handler = on_signal;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGHUP, &sa, NULL);
 
     if (argc < 2) {
         printf("Requires one parameter (either: '--print-info', 'stdin' or the name of a socket)\n");
