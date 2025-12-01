@@ -38,6 +38,7 @@
 #include <sstream>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include "inc/bitmap_helper.h"
+#include "inc/freeform_output_helper.h"
 
 std::string trim(const std::string& str) {
     size_t first = str.find_first_not_of(' ');
@@ -132,19 +133,8 @@ int main(int argc, char **argv) {
 
     run_classifier_init();
 
-#if EI_CLASSIFIER_FREEFORM_OUTPUT
-    // for "freeform" outputs, the application needs to allocate the memory (one matrix_t per output tensor)
-    std::vector<matrix_t> freeform_outputs;
-    freeform_outputs.reserve(ei_default_impulse.impulse->freeform_outputs_size);
-    for (size_t ix = 0; ix < ei_default_impulse.impulse->freeform_outputs_size; ++ix) {
-        freeform_outputs.emplace_back(ei_default_impulse.impulse->freeform_outputs[ix], 1);
-    }
-    EI_IMPULSE_ERROR set_freeform_res = ei_set_freeform_output(freeform_outputs.data(), freeform_outputs.size());
-    if (set_freeform_res != EI_IMPULSE_OK) {
-        printf("ei_set_freeform_output failed with %d\n", set_freeform_res);
-        exit(1);
-    }
-#endif // EI_CLASSIFIER_FREEFORM_OUTPUT
+    // Freeform models need to reserve their own memory. Set it up (see inc/freeform_output_helper.h)
+    init_freeform_outputs(&ei_default_impulse);
 
     ei_impulse_result_t result;
 
