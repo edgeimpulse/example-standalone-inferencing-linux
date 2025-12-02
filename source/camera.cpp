@@ -102,7 +102,7 @@ int main(int argc, char** argv) {
     run_classifier_init();
 
     // Freeform models need to reserve their own memory. Set it up (see inc/freeform_output_helper.h)
-    init_freeform_outputs(&ei_default_impulse);
+    freeform_outputs_init(&ei_default_impulse);
 
     // open the webcam...
     cv::VideoCapture camera(atoi(argv[1]));

@@ -58,7 +58,7 @@ int create_bitmap_file(const char *filename, uint16_t *buffer, size_t w, size_t 
     }
     fwrite(bmpfileheader, 1, 14, f);
     fwrite(bmpinfoheader, 1, 40, f);
-    for(int i = 0; i < h; i++) {
+    for(int i = 0; i < (int)h; i++) {
         fwrite(img + (w * (h - i - 1) * 3), 3, w, f);
         fwrite(bmppad, 1, (4 - (w * 3) % 4 ) % 4, f);
     }
@@ -118,7 +118,7 @@ int create_bitmap_file(const char *filename, float *buffer, size_t w, size_t h) 
     }
     fwrite(bmpfileheader, 1, 14, f);
     fwrite(bmpinfoheader, 1, 40, f);
-    for(int i = 0; i < h; i++) {
+    for(int i = 0; i < (int)h; i++) {
         fwrite(img + (w * (h - i - 1) * 3), 3, w, f);
         fwrite(bmppad, 1, (4 - (w * 3) % 4 ) % 4, f);
     }

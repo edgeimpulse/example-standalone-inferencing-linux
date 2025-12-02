@@ -63,7 +63,7 @@ static std::map<ei_impulse_handle_t *, std::vector<matrix_t>> freeform_output_ma
  * Where the memory is fully owned by your application (when freeform_outputs goes out of scope ->
  * memory is freed).
  */
-void init_freeform_outputs(ei_impulse_handle_t *impulse_handle) {
+void freeform_outputs_init(ei_impulse_handle_t *impulse_handle) {
     // make new object in the map based on handle (so this works with multiple impulses)
     auto& freeform_outputs = freeform_output_map[impulse_handle];
 
@@ -82,7 +82,7 @@ void init_freeform_outputs(ei_impulse_handle_t *impulse_handle) {
 
 #else
 
-void init_freeform_outputs(ei_impulse_handle_t *impulse_handle) { }
+void freeform_outputs_init(ei_impulse_handle_t *impulse_handle) { }
 
 #endif // EI_CLASSIFIER_FREEFORM_OUTPUT
 

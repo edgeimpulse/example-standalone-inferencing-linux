@@ -109,16 +109,17 @@ int main(int argc, char** argv) {
     }
 
     // print file properties
-    printf("");
+    printf("\n");
     printf("File properties:\n");
     printf("    width: %d\n", (int)file.get(cv::CAP_PROP_FRAME_WIDTH));
     printf("    height: %d\n", (int)file.get(cv::CAP_PROP_FRAME_HEIGHT));
     printf("    fps: %d\n", (int)file.get(cv::CAP_PROP_FPS));
+    printf("\n");
 
     run_classifier_init();
 
     // Freeform models need to reserve their own memory. Set it up (see inc/freeform_output_helper.h)
-    init_freeform_outputs(&ei_default_impulse);
+    freeform_outputs_init(&ei_default_impulse);
 
     cv::VideoWriter output_file("output.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10, cv::Size(EI_CLASSIFIER_INPUT_WIDTH, EI_CLASSIFIER_INPUT_HEIGHT));
 

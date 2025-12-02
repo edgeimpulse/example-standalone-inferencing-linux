@@ -280,7 +280,7 @@ int main(int argc, char **argv)
     run_classifier_init();
 
     // Freeform models need to reserve their own memory. Set it up (see inc/freeform_output_helper.h)
-    init_freeform_outputs(&ei_default_impulse);
+    freeform_outputs_init(&ei_default_impulse);
 
     while (1) {
         int x = snd_pcm_readi(capture_handle, classifier_slice_buffer, EI_CLASSIFIER_SLICE_SIZE);
