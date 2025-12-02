@@ -42,6 +42,7 @@
 #include <signal.h>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include <alsa/asoundlib.h>
+#include "inc/freeform_output_helper.h"
 
 // Forward declarations
 int microphone_audio_signal_get_data(size_t, size_t, float *);
@@ -240,14 +241,8 @@ void classify_current_buffer() {
         return;
     }
 
-    printf("%d ms. ", result.timing.dsp + result.timing.classification);
-    for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-        printf("%s: %.05f", result.classification[ix].label, result.classification[ix].value);
-        if (ix != EI_CLASSIFIER_LABEL_COUNT - 1) {
-            printf(", ");
-        }
-    }
-    printf("\n");
+    // Print results, see edge-impulse-sdk/classifier/ei_print_results.h
+    ei_print_results(&ei_default_impulse, &result);
 }
 
 /**
@@ -283,6 +278,9 @@ int main(int argc, char **argv)
     ::signal(SIGINT, close_alsa);
 
     run_classifier_init();
+
+    // Freeform models need to reserve their own memory. Set it up (see inc/freeform_output_helper.h)
+    freeform_outputs_init(&ei_default_impulse);
 
     while (1) {
         int x = snd_pcm_readi(capture_handle, classifier_slice_buffer, EI_CLASSIFIER_SLICE_SIZE);

@@ -37,6 +37,7 @@
 #include "opencv2/videoio/videoio_c.h"
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
 #include "iostream"
+#include "inc/freeform_output_helper.h"
 
 static bool use_debug = false;
 
@@ -100,6 +101,9 @@ int main(int argc, char** argv) {
 
     run_classifier_init();
 
+    // Freeform models need to reserve their own memory. Set it up (see inc/freeform_output_helper.h)
+    freeform_outputs_init(&ei_default_impulse);
+
     // open the webcam...
     cv::VideoCapture camera(atoi(argv[1]));
     if (!camera.isOpened()) {
@@ -150,54 +154,8 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-    // print the predictions
-    printf("Predictions (DSP: %d ms., Classification: %d ms., Anomaly: %d ms.): \n",
-                result.timing.dsp, result.timing.classification, result.timing.anomaly);
-
-    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
-        printf("#Object tracking results:\n");
-        for (uint32_t ix = 0; ix < result.postprocessed_output.object_tracking_output.open_traces_count; ix++) {
-            ei_object_tracking_trace_t trace = result.postprocessed_output.object_tracking_output.open_traces[ix];
-            printf("%s (ID %d) [ x: %u, y: %u, width: %u, height: %u ]\n", trace.label, (int)trace.id, trace.x, trace.y, trace.width, trace.height);
-        }
-
-        if (result.postprocessed_output.object_tracking_output.open_traces_count == 0) {
-            printf("    No objects found\n");
-        }
-    #elif EI_CLASSIFIER_OBJECT_DETECTION == 1
-        printf("#Object detection results:\n");
-        bool found_bb = false;
-        for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
-            auto bb = result.bounding_boxes[ix];
-            if (bb.value == 0) {
-                continue;
-            }
-
-            found_bb = true;
-            printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
-        }
-
-        if (!found_bb) {
-            printf("    no objects found\n");
-        }
-    #else
-        printf("#Classification results:\n");
-        for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++) {
-            printf("%s: %.05f\n", result.classification[ix].label, result.classification[ix].value);
-        }
-    #endif
-
-    #if EI_CLASSIFIER_HAS_VISUAL_ANOMALY // visual AD
-        printf("#Visual anomaly grid results:\n");
-        for (uint32_t i = 0; i < result.visual_ad_count; i++) {
-            ei_impulse_result_bounding_box_t bb = result.visual_ad_grid_cells[i];
-            if (bb.value == 0) {
-                continue;
-            }
-            printf("    %s (%f) [ x: %u, y: %u, width: %u, height: %u ]\n", bb.label, bb.value, bb.x, bb.y, bb.width, bb.height);
-        }
-        printf("Visual anomaly values: Mean %.3f Max %.3f\n", result.visual_ad_result.mean_value, result.visual_ad_result.max_value);
-    #endif
+        // Print results, see edge-impulse-sdk/classifier/ei_print_results.h
+        ei_print_results(&ei_default_impulse, &result);
 
         // show the image on the window
         if (use_debug) {
