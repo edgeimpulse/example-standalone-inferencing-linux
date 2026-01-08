@@ -12,6 +12,7 @@ CFLAGS += -Ithird_party/
 CFLAGS += -Iutils/
 CFLAGS += -Os
 CFLAGS += -DNDEBUG
+CFLAGS += -DSILENCE_EI_CLASSFIER_OBJECT_DETECTION_COUNT_WARNING=1
 CFLAGS += -g
 ifeq (${CC}, clang)
 	CFLAGS += -Wno-asm-operand-widths
