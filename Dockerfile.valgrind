@@ -1,0 +1,12 @@
+FROM ubuntu:24.04
+
+WORKDIR /app
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt/lists \
+    apt update && \
+    apt install --no-install-recommends -y build-essential valgrind lldb
+
+WORKDIR /app/example-standalone-inferencing-linux

@@ -24,6 +24,32 @@ CSOURCES = $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*.c) 
 CXXSOURCES = $(wildcard tflite-model/*.cpp) $(wildcard edge-impulse-sdk/dsp/kissfft/*.cpp) $(wildcard edge-impulse-sdk/dsp/dct/*.cpp) $(wildcard ./edge-impulse-sdk/dsp/memory.cpp) $(wildcard edge-impulse-sdk/porting/posix/*.c*) $(wildcard edge-impulse-sdk/porting/mingw32/*.c*)
 CCSOURCES =
 
+# Include CMSIS-NN if compiling for an Arm target that supports it
+ifeq (${CMSIS_NN}, 1)
+
+	# Include CMSIS-NN and CMSIS-DSP header files
+	CFLAGS += -Iedge-impulse-sdk/CMSIS/NN/Include/
+	CFLAGS += -Iedge-impulse-sdk/CMSIS/DSP/PrivateInclude/
+
+	# C and C++ compiler flags for CMSIS-NN and CMSIS-DSP
+	CFLAGS += -Wno-unknown-attributes 					# Disable warnings about unknown attributes
+	CFLAGS += -DEI_CLASSIFIER_TFLITE_ENABLE_CMSIS_NN=1	# Use CMSIS-NN functions in the SDK
+	CFLAGS += -D__ARM_FEATURE_DSP=1 					# Enable CMSIS-DSP optimized features
+	CFLAGS += -D__GNUC_PYTHON__=1						# Enable CMSIS-DSP intrisics (non-C features)
+
+	# Include C source code for required CMSIS libraries
+	CSOURCES += $(wildcard edge-impulse-sdk/CMSIS/NN/Source/ActivationFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/BasicMathFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/ConcatenationFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/ConvolutionFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/FullyConnectedFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/NNSupportFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/PoolingFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/ReshapeFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/SoftmaxFunctions/*.c) \
+				$(wildcard edge-impulse-sdk/CMSIS/NN/Source/SVDFunctions/*.c)
+endif
+
 ifeq (${USE_TVM},1)
 
 ifndef TVM_HOME

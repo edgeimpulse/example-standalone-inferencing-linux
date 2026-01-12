@@ -388,3 +388,22 @@ To solve this:
 
 2. Build your application with `LINK_TFLITE_FLEX_LIBRARY=1` .
 3. Copy the shared library for your platform to `/usr/lib` or `/usr/local/lib` to run your application (see [Docs: Flex delegates](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux/flex-delegates)).
+
+## Valgrind
+
+```bash
+# Build / run container
+docker build -t valgrind -f Dockerfile.valgrind .
+docker run --rm -it --privileged -v $PWD:/app/example-standalone-inferencing-linux -v ~/repos/edgeimpulse/edge-impulse-sdk:/app/edgeimpulse/edge-impulse-sdk valgrind bash
+
+# From inside the container...
+
+# 1. Build application
+APP_CUSTOM=1 make -j`nproc`
+
+# 2. Run under valgrind
+valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --error-exitcode=1 ./build/custom features.txt
+
+# 3. Run w/ debugger
+lldb -o run -- ./build/custom features.txt
+```
