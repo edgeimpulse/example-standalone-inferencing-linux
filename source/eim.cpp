@@ -43,7 +43,6 @@
 #include <vector>
 #include <signal.h>
 #include "edge-impulse-sdk/classifier/ei_run_classifier.h"
-#include "edge-impulse-sdk/classifier/postprocessing/ei_postprocessing_common.h"
 #include "json/json.hpp"
 #include "rapidjson/document.h"
 #include "rapidjson/prettywriter.h"
@@ -378,7 +377,7 @@ void json_send_classification_response(int id,
     }
 
     int bytes_written = snprintf(resp_buffer, resp_buffer_size, "%s\n", resp.dump().c_str());
-    if (bytes_written > resp_buffer_size) {
+    if (bytes_written > (int)resp_buffer_size) {
         char err_msg[512];
         snprintf(err_msg, 512, "Classification response (%d bytes) was larger than max response buffer size (%d bytes)",
             (int)bytes_written,
@@ -543,30 +542,28 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         for (size_t ix = 0; ix < impulse->postprocessing_blocks_size; ix++) {
             const ei_postprocessing_block_t pp_block = impulse->postprocessing_blocks[ix];
-            float threshold = 0.0f;
-            std::string type_str = "unknown";
-            std::string threshold_name_str = "unknown";
-            auto res = get_threshold_postprocessing(&type_str, &threshold_name_str, pp_block.config, pp_block.type, &threshold);
-            if (res == EI_IMPULSE_OK) {
-                thresholds.push_back({
-                    { "id", pp_block.block_id },
-                    { "type", type_str.c_str() },
-                    { threshold_name_str.c_str(), threshold }
-                });
-            };
-        #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
-            if (pp_block.init_fn == init_object_tracking) {
-                const ei_object_tracking_config_t *config = (ei_object_tracking_config_t*)pp_block.config;
 
-                thresholds.push_back({
-                    { "id", pp_block.block_id },
-                    { "type", "object_tracking" },
-                    { "keep_grace", config->keep_grace },
-                    { "max_observations", config->max_observations },
-                    { "threshold", config->threshold },
-                });
+            std::vector<ei_threshold_desc_t> pp_thresholds;
+            EI_IMPULSE_ERROR res = get_thresholds_postprocessing(&pp_block, pp_thresholds);
+            if (res != EI_IMPULSE_OK) {
+                ei_printf("WARN: get_thresholds_postprocessing for postprocessing_block ix=%d failed with %d\n",
+                    (int)ix, res);
+                continue;
             }
-        #endif // #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+
+            if (pp_thresholds.size() == 0) continue;
+
+            nlohmann::json threshold_obj = {
+                {"id", pp_block.block_id },
+                {"type", pp_thresholds[0].type},
+            };
+
+            for (auto pp_threshold : pp_thresholds) {
+                threshold_obj[pp_threshold.name.c_str()] = pp_threshold.value;
+            }
+
+            thresholds.push_back(threshold_obj);
+
         }
 
     #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
@@ -880,64 +877,49 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
             const ei_postprocessing_block_t pp_block = impulse->postprocessing_blocks[ix];
             if (pp_block.block_id != (uint32_t)block_id) continue;
             found_block = true;
-            if (set_threshold.HasMember("min_score") && set_threshold["min_score"].IsNumber()) {
-                set_threshold_postprocessing(pp_block.block_id, pp_block.config, pp_block.type, set_threshold["min_score"].GetFloat());
-            }
-            if (set_threshold.HasMember("min_anomaly_score") && set_threshold["min_anomaly_score"].IsNumber()) {
-                set_threshold_postprocessing(pp_block.block_id, pp_block.config, pp_block.type, set_threshold["min_anomaly_score"].GetFloat());
-            }
-        }
+            
+            for (auto& m : set_threshold.GetObject()) {
+                std::string key = m.name.GetString();
+                const rapidjson::Value& value = m.value;
 
-        for (size_t ix = 0; ix < ei_default_impulse.impulse->postprocessing_blocks_size; ix++) {
-            const ei_postprocessing_block_t processing_block = ei_default_impulse.impulse->postprocessing_blocks[ix];
-            if ((int)processing_block.block_id != block_id) continue;
+                if (key == "id") continue;
+                if (key == "type") continue;
 
-            found_block = true;
-
-        #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
-            if (processing_block.init_fn == init_object_tracking) {
-                const ei_object_tracking_config_t *old_config = (ei_object_tracking_config_t*)processing_block.config;
-
-                ei_object_tracking_config_t new_config = {
-                    .implementation_version = old_config->implementation_version,
-                    .keep_grace = old_config->keep_grace,
-                    .max_observations = old_config->max_observations,
-                    .threshold = old_config->threshold,
-                    .use_iou = old_config->use_iou,
-                };
-
-                if (set_threshold.HasMember("keep_grace") && set_threshold["keep_grace"].IsNumber()) {
-                    new_config.keep_grace = (uint32_t)set_threshold["keep_grace"].GetUint64();
-                }
-                if (set_threshold.HasMember("max_observations") && set_threshold["max_observations"].IsNumber()) {
-                    new_config.max_observations = (uint16_t)set_threshold["max_observations"].GetUint64();
-                }
-                if (set_threshold.HasMember("threshold") && set_threshold["threshold"].IsNumber()) {
-                    new_config.threshold = set_threshold["threshold"].GetFloat();
+                if (!value.IsNumber()) {
+                    char err_str[1024];
+                    snprintf(err_str, 1024, "set_threshold, value for '%s' should be numeric", key.c_str());
+                    nlohmann::json err = {
+                        {"id", id},
+                        {"success", false},
+                        {"error", err_str},
+                    };
+                    snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
+                    return;
                 }
 
-                EI_IMPULSE_ERROR ret = set_post_process_params(&ei_default_impulse, &new_config);
+                EI_IMPULSE_ERROR ret = set_threshold_postprocessing(&pp_block, key, value.GetFloat());
                 if (ret != EI_IMPULSE_OK) {
-                    char err_msg[1024];
-                    snprintf(err_msg, 1024, "set_threshold: set_post_process_params returned %d", ret);
+                    char err_str[1024];
+                    snprintf(err_str, 1024, "set_threshold, setting key '%s' failed with error %d", key.c_str(), ret);
 
                     nlohmann::json err = {
                         {"id", id},
                         {"success", false},
-                        {"error", err_msg},
+                        {"error", err_str},
                     };
                     snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
                     return;
                 }
             }
-        #endif // #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
         }
 
         if (!found_block) {
+            char err_str[1024];
+            snprintf(err_str, 1024, "set_threshold: cannot find learn block with id %d", (int)block_id);
             nlohmann::json err = {
                 {"id", id},
                 {"success", false},
-                {"error", "set_threshold: cannot find learn block with this id"},
+                {"error", err_str},
             };
             snprintf(resp_buffer, resp_buffer_size, "%s\n", err.dump().c_str());
             return;
@@ -1187,7 +1169,7 @@ int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IONBF, 0);
 
     atexit(cleanup_all_shm);
-    struct sigaction sa = { 0 };
+    struct sigaction sa{};
     sa.sa_handler = on_signal;
     sigemptyset(&sa.sa_mask);
     sigaction(SIGINT, &sa, NULL);
