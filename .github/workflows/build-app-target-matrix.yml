@@ -37,7 +37,7 @@ jobs:
         with:
           project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
           api_key: ${{ secrets['EDGE_IMPULSE_API_KEY'] }}
-          engine: tflite
+          engine: drp-ai
           deployment_type: drp-ai-lib
 
       - name: Upload deployment artifact (DRPAI)
