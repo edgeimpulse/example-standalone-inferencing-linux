@@ -1,0 +1,210 @@
+name: Build APP x TARGET matrix
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-matrix:
+    name: ${{ matrix.app }} on ${{ matrix.target.name }}
+    runs-on: ${{ matrix.target.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - APP_COLLECT
+          - APP_CUSTOM
+          - APP_AUDIO
+          - APP_CAMERA
+          - APP_VIDEO
+        #   - APP_EIM
+        target:
+          - name: TARGET_LINUX_X86
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_X86=1 USE_FULL_TFLITE=1
+            cc: gcc
+            cxx: g++
+          - name: TARGET_LINUX_ARMV7
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1
+            cc: arm-linux-gnueabihf-gcc
+            cxx: arm-linux-gnueabihf-g++
+          - name: TARGET_LINUX_AARCH64
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1
+            cc: clang
+            cxx: clang++
+        #   - name: TARGET_MAC_X86_64
+        #     runner: macos-13
+        #     target_flags: TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1
+        #     cc: clang
+        #     cxx: clang++
+        #   - name: TARGET_MAC_ARM64
+        #     runner: macos-14
+        #     target_flags: TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1
+        #     cc: clang
+        #     cxx: clang++
+          - name: TARGET_JETSON_ORIN
+            runner: ubuntu-24.04
+            target_flags: TARGET_JETSON_ORIN=1
+            cc: clang
+            cxx: clang++
+          - name: TARGET_JETSON
+            runner: ubuntu-24.04
+            target_flags: TARGET_JETSON=1
+            cc: clang
+            cxx: clang++
+          - name: TARGET_RENESAS_RZV2L
+            runner: ubuntu-24.04
+            target_flags: TARGET_RENESAS_RZV2L=1
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
+          - name: TARGET_RENESAS_RZG2L
+            runner: ubuntu-24.04
+            target_flags: TARGET_RENESAS_RZG2L=1
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
+          - name: TARGET_TDA4VM
+            runner: ubuntu-24.04
+            target_flags: TARGET_TDA4VM=1
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
+          - name: TARGET_AM62A
+            runner: ubuntu-24.04
+            target_flags: TARGET_AM62A=1
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
+          - name: TARGET_AM68A
+            runner: ubuntu-24.04
+            target_flags: TARGET_AM68A=1
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y make clang
+
+          target='${{ matrix.target.name }}'
+          app='${{ matrix.app }}'
+
+          if [[ "$target" == "TARGET_LINUX_ARMV7" ]]; then
+            sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+          fi
+
+          if [[ "$target" == "TARGET_LINUX_AARCH64" || "$target" == "TARGET_RENESAS_RZV2L" || "$target" == "TARGET_RENESAS_RZG2L" || "$target" == "TARGET_TDA4VM" || "$target" == "TARGET_AM62A" || "$target" == "TARGET_AM68A" ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          fi
+
+          if [[ "$app" == "APP_AUDIO" ]]; then
+            sudo apt-get install -y libasound2-dev
+          fi
+
+          if [[ ("$app" == "APP_CAMERA" || "$app" == "APP_VIDEO") && "$target" == "TARGET_LINUX_X86" ]]; then
+            sudo apt-get install -y libopencv-dev
+          fi
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS' && (matrix.app == 'APP_CAMERA' || matrix.app == 'APP_VIDEO')
+        shell: bash
+        run: |
+          set -euxo pipefail
+          brew update
+          brew install opencv
+
+      - name: Validate matrix combination
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          app='${{ matrix.app }}'
+          target='${{ matrix.target.name }}'
+          supported='true'
+          reason=''
+
+          if [[ "$target" == "TARGET_JETSON" || "$target" == "TARGET_JETSON_ORIN" ]]; then
+            supported='false'
+            reason='Jetson builds require TensorRT/CUDA runtime libraries that are not available on GitHub-hosted runners.'
+          fi
+
+          if [[ "$target" == "TARGET_TDA4VM" || "$target" == "TARGET_AM62A" || "$target" == "TARGET_AM68A" ]]; then
+            supported='false'
+            reason='TI TIDL builds require vendor SDK assets (for TIDL_TOOLS_PATH) not available in standard CI runners.'
+          fi
+
+          if [[ "$app" == "APP_AUDIO" && "$target" != "TARGET_LINUX_X86" ]]; then
+            supported='false'
+            reason='Audio app depends on ALSA and is only validated on native Linux x86 in this workflow.'
+          fi
+
+          if [[ "$app" == "APP_CAMERA" && "$target" != "TARGET_LINUX_X86" && "$target" != "TARGET_MAC_X86_64" && "$target" != "TARGET_MAC_ARM64" ]]; then
+            supported='false'
+            reason='Camera app depends on OpenCV and is validated only on native Linux/macOS runners in this workflow.'
+          fi
+
+          if [[ "$app" == "APP_VIDEO" && "$target" != "TARGET_LINUX_X86" && "$target" != "TARGET_MAC_X86_64" && "$target" != "TARGET_MAC_ARM64" ]]; then
+            supported='false'
+            reason='Video app depends on OpenCV and is validated only on native Linux/macOS runners in this workflow.'
+          fi
+
+          echo "supported=$supported" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+
+      - name: Skip unsupported combination
+        if: steps.validate.outputs.supported != 'true'
+        shell: bash
+        run: |
+          echo "Skipping ${{ matrix.app }} + ${{ matrix.target.name }}"
+          echo "Reason: ${{ steps.validate.outputs.reason }}"
+
+      - name: Build and deploy Edge Impulse model
+        if: steps.validate.outputs.supported == 'true'
+        id: build-deploy
+        uses: edgeimpulse/build-deploy@v2.0.0
+        with:
+          project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
+          api_key: ${{ secrets['EDGE_IMPULSE_API_KEY'] }}
+          deployment_type: zip
+
+      - name: Extract model and SDK
+        if: steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          rm -rf edge-impulse-sdk model-parameters tflite-model temp
+          mkdir -p temp
+
+          unzip -q "${{ steps.build-deploy.outputs.deployment_file_name }}" -d temp
+          mv temp/edge-impulse-sdk .
+          mv temp/model-parameters .
+          mv temp/tflite-model .
+
+          rm -rf "${{ steps.build-deploy.outputs.deployment_file_name }}" temp
+
+      - name: Build
+        if: steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          JOBS=2
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            JOBS="$(nproc)"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            JOBS="$(sysctl -n hw.ncpu)"
+          fi
+
+          make clean
+          make -j"$JOBS" "${{ matrix.app }}=1" ${{ matrix.target.target_flags }} CC=${{ matrix.target.cc }} CXX=${{ matrix.target.cxx }}
