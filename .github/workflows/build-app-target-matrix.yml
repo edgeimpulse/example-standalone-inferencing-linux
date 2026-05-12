@@ -20,7 +20,7 @@ jobs:
           - APP_AUDIO
           - APP_CAMERA
           - APP_VIDEO
-        #   - APP_EIM
+          - APP_EIM
         target:
           - name: TARGET_LINUX_X86
             runner: ubuntu-24.04
@@ -32,11 +32,16 @@ jobs:
             target_flags: TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1
             cc: arm-linux-gnueabihf-gcc
             cxx: arm-linux-gnueabihf-g++
+          - name: TARGET_LINUX_ARMV7_LEGACY
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_ARMV7_LEGACY=1 USE_FULL_TFLITE=1
+            cc: arm-linux-gnueabihf-gcc
+            cxx: arm-linux-gnueabihf-g++
           - name: TARGET_LINUX_AARCH64
             runner: ubuntu-24.04
             target_flags: TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1
-            cc: clang
-            cxx: clang++
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
         #   - name: TARGET_MAC_X86_64
         #     runner: macos-13
         #     target_flags: TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1
@@ -50,13 +55,13 @@ jobs:
           - name: TARGET_JETSON_ORIN
             runner: ubuntu-24.04
             target_flags: TARGET_JETSON_ORIN=1
-            cc: clang
-            cxx: clang++
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
           - name: TARGET_JETSON
             runner: ubuntu-24.04
             target_flags: TARGET_JETSON=1
-            cc: clang
-            cxx: clang++
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
           - name: TARGET_RENESAS_RZV2L
             runner: ubuntu-24.04
             target_flags: TARGET_RENESAS_RZV2L=1
@@ -100,11 +105,19 @@ jobs:
           target='${{ matrix.target.name }}'
           app='${{ matrix.app }}'
 
-          if [[ "$target" == "TARGET_LINUX_ARMV7" ]]; then
+          if [[ "$target" == "TARGET_LINUX_ARMV7" || "$target" == "TARGET_LINUX_ARMV7_LEGACY" ]]; then
             sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
           fi
 
-          if [[ "$target" == "TARGET_LINUX_AARCH64" || "$target" == "TARGET_RENESAS_RZV2L" || "$target" == "TARGET_RENESAS_RZG2L" || "$target" == "TARGET_TDA4VM" || "$target" == "TARGET_AM62A" || "$target" == "TARGET_AM68A" ]]; then
+          if [[ "$target" == "TARGET_LINUX_AARCH64" || \
+                "$target" == "TARGET_RENESAS_RZV2L" || \
+                "$target" == "TARGET_RENESAS_RZG2L" || \
+                "$target" == "TARGET_TDA4VM" || \
+                "$target" == "TARGET_AM62A" || \
+                "$target" == "TARGET_AM68A" || \
+                "$target" == "TARGET_JETSON" || \
+                "$target" == "TARGET_JETSON_ORIN"
+                ]]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           fi
 
