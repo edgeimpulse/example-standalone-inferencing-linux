@@ -21,10 +21,17 @@ limitations under the License.
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "tensorflow-lite/tensorflow/core/framework/attr_value.pb.h"
 #include "tensorflow-lite/tensorflow/core/framework/node_def.pb.h"
+#include "tensorflow-lite/tensorflow/core/framework/op_kernel.h"
+#include "tensorflow-lite/tensorflow/core/framework/shape_inference.h"
+#include "tensorflow-lite/tensorflow/core/framework/tensor.h"
+#include "tensorflow-lite/tensorflow/core/framework/tensor_shape.h"
 #include "tensorflow-lite/tensorflow/core/protobuf/error_codes.pb.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/op_kernel.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/shape.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/shim/status_macros.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/shim/tensor_view.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/shim/tf_tensor_view.h"

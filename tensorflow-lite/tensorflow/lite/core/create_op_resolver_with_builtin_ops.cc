@@ -17,6 +17,7 @@ limitations under the License.
 
 #include "tensorflow-lite/tensorflow/lite/core/create_op_resolver.h"
 #include "tensorflow-lite/tensorflow/lite/core/kernels/register.h"
+#include "tensorflow-lite/tensorflow/lite/mutable_op_resolver.h"
 
 namespace tflite {
 

@@ -21,7 +21,6 @@ limitations under the License.
 #include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/variants/list_ops_util.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/variants/tensor_array.h"
-#include "tensorflow-lite/tensorflow/lite/util.h"
 
 namespace tflite {
 namespace variants {

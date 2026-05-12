@@ -16,7 +16,9 @@ limitations under the License.
 
 #include <cstdint>
 
+#include "tensorflow-lite/tensorflow/core/framework/op_kernel.h"
 #include "tensorflow-lite/tensorflow/core/framework/types.h"
+#include "tensorflow-lite/tensorflow/lite/kernels/shim/tf_op_shim.h"
 
 namespace tflite {
 namespace shim {

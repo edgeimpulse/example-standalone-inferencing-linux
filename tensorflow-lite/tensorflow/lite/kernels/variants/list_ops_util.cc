@@ -14,11 +14,12 @@ limitations under the License.
 ==============================================================================*/
 #include "tensorflow-lite/tensorflow/lite/kernels/variants/list_ops_util.h"
 
+#include <vector>
+
 #include "tensorflow-lite/tensorflow/lite/array.h"
 #include "tensorflow-lite/tensorflow/lite/c/c_api_types.h"
 #include "tensorflow-lite/tensorflow/lite/core/c/common.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/variants/tensor_array.h"
-#include "tensorflow-lite/tensorflow/lite/util.h"
 
 namespace tflite {
 namespace variants {

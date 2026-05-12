@@ -15,6 +15,8 @@ limitations under the License.
 
 #include "tensorflow-lite/tensorflow/lite/kernels/perception/perception_ops.h"
 
+#include "tensorflow-lite/tensorflow/lite/mutable_op_resolver.h"
+
 namespace tflite {
 namespace ops {
 namespace custom {
