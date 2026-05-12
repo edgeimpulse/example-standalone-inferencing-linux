@@ -171,8 +171,7 @@ jobs:
           echo "Reason: ${{ steps.validate.outputs.reason }}"
 
       - name: Build and deploy Edge Impulse model
-        # model is only needed for APP_EIM
-        if: matrix.app == 'APP_EIM'
+        if: matrix.app != 'APP_COLLECT'
         id: build-deploy
         uses: edgeimpulse/build-deploy@v2.0.0
         with:
@@ -182,7 +181,7 @@ jobs:
           deployment_type: zip
 
       - name: Extract model and SDK
-        if: matrix.app == 'APP_EIM'
+        if: matrix.app != 'APP_COLLECT'
         shell: bash
         run: |
           set -euxo pipefail
