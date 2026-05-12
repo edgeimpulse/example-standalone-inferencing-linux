@@ -191,7 +191,7 @@ jobs:
           project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
           api_key: ${{ secrets['EDGE_IMPULSE_API_KEY'] }}
           engine: tflite
-          deployment_type: zip
+          deployment_type: zip-linux
 
       - name: Extract model and SDK
         if: matrix.app != 'APP_COLLECT'
