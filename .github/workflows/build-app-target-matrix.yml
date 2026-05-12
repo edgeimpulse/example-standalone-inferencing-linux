@@ -209,4 +209,4 @@ jobs:
           fi
 
           make clean
-          make -j"$JOBS" "${{ matrix.app }}=1" ${{ matrix.target.target_flags }} CC=${{ matrix.target.cc }} CXX=${{ matrix.target.cxx }}
+          "${{ matrix.app }}=1" ${{ matrix.target.target_flags }} make -j"$JOBS" CC=${{ matrix.target.cc }} CXX=${{ matrix.target.cxx }}
