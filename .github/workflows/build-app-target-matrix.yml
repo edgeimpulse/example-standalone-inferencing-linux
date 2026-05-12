@@ -169,7 +169,8 @@ jobs:
           echo "Reason: ${{ steps.validate.outputs.reason }}"
 
       - name: Build and deploy Edge Impulse model
-        if: steps.validate.outputs.supported == 'true'
+        # model is only needed for APP_EIM
+        if: matrix.app == 'APP_EIM'
         id: build-deploy
         uses: edgeimpulse/build-deploy@v2.0.0
         with:
