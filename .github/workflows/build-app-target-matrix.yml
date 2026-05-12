@@ -8,7 +8,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  prepare-model-artifact:
+    name: Prepare Edge Impulse model artifact
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build and deploy Edge Impulse model
+        id: build-deploy
+        uses: edgeimpulse/build-deploy@v2.0.0
+        with:
+          project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
+          api_key: ${{ secrets['EDGE_IMPULSE_API_KEY'] }}
+          engine: tflite
+          deployment_type: zip
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-impulse-deployment
+          path: ${{ steps.build-deploy.outputs.deployment_file_name }}
+          if-no-files-found: error
+
   build-matrix:
+    needs: prepare-model-artifact
     name: ${{ matrix.app }} on ${{ matrix.target.name }}
     runs-on: ${{ matrix.target.runner }}
     strategy:
@@ -183,18 +207,15 @@ jobs:
           echo "Skipping ${{ matrix.app }} + ${{ matrix.target.name }}"
           echo "Reason: ${{ steps.validate.outputs.reason }}"
 
-      - name: Build and deploy Edge Impulse model
-        if: matrix.app != 'APP_COLLECT'
-        id: build-deploy
-        uses: edgeimpulse/build-deploy@v2.0.0
+      - name: Download deployment artifact
+        if: matrix.app != 'APP_COLLECT' && steps.validate.outputs.supported == 'true'
+        uses: actions/download-artifact@v4
         with:
-          project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
-          api_key: ${{ secrets['EDGE_IMPULSE_API_KEY'] }}
-          engine: tflite
-          deployment_type: zip-linux
+          name: edge-impulse-deployment
+          path: .
 
       - name: Extract model and SDK
-        if: matrix.app != 'APP_COLLECT'
+        if: matrix.app != 'APP_COLLECT' && steps.validate.outputs.supported == 'true'
         shell: bash
         run: |
           set -euxo pipefail
@@ -202,12 +223,18 @@ jobs:
           rm -rf edge-impulse-sdk model-parameters tflite-model temp
           mkdir -p temp
 
-          unzip -q "${{ steps.build-deploy.outputs.deployment_file_name }}" -d temp
+          deployment_file="$(find . -maxdepth 1 -type f -name '*.zip' | head -n 1)"
+          if [[ -z "$deployment_file" ]]; then
+            echo "No deployment zip file found after artifact download"
+            exit 1
+          fi
+
+          unzip -q "$deployment_file" -d temp
           mv temp/edge-impulse-sdk .
           mv temp/model-parameters .
           mv temp/tflite-model .
 
-          rm -rf "${{ steps.build-deploy.outputs.deployment_file_name }}" temp
+          rm -rf "$deployment_file" temp
 
       - name: Build
         if: steps.validate.outputs.supported == 'true'
