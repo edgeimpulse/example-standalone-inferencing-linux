@@ -208,5 +208,5 @@ jobs:
             JOBS="$(sysctl -n hw.ncpu)"
           fi
 
-          "${{ matrix.app }}=1" ${{ matrix.target.target_flags }} make clean
-          "${{ matrix.app }}=1" ${{ matrix.target.target_flags }} make -j"$JOBS" CC=${{ matrix.target.cc }} CXX=${{ matrix.target.cxx }}
+          ${{ matrix.app }}=1 ${{ matrix.target.target_flags }} make clean
+          ${{ matrix.app }}=1 ${{ matrix.target.target_flags }} make -j"$JOBS" CC=${{ matrix.target.cc }} CXX=${{ matrix.target.cxx }}
