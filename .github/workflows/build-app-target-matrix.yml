@@ -12,11 +12,8 @@ jobs:
     name: Prepare Edge Impulse model artifact
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Build and deploy Edge Impulse model (FOMO)
-        id: build-deploy-fomo
+      - name: Build and deploy Edge Impulse model (FOMO / TFLite)
+        id: build-deploy-fomo-tflite
         uses: edgeimpulse/build-deploy@v2.0.0
         with:
           project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
@@ -24,15 +21,15 @@ jobs:
           engine: tflite
           deployment_type: zip-linux
 
-      - name: Upload deployment artifact (FOMO)
+      - name: Upload deployment artifact (FOMO / TFLite)
         uses: actions/upload-artifact@v4
         with:
           name: edge-impulse-deployment-fomo
-          path: ${{ steps.build-deploy-fomo.outputs.deployment_file_name }}
+          path: ${{ steps.build-deploy-fomo-tflite.outputs.deployment_file_name }}
           if-no-files-found: error
 
-      - name: Build and deploy Edge Impulse model (DRPAI)
-        id: build-deploy-drpai
+      - name: Build and deploy Edge Impulse model (FOMO / DRPAI)
+        id: build-deploy-fomo-drpai
         uses: edgeimpulse/build-deploy@v2.0.0
         with:
           project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
@@ -40,11 +37,11 @@ jobs:
           engine: drp-ai
           deployment_type: drp-ai-lib
 
-      - name: Upload deployment artifact (DRPAI)
+      - name: Upload deployment artifact (FOMO / DRPAI)
         uses: actions/upload-artifact@v4
         with:
           name: edge-impulse-deployment-drpai
-          path: ${{ steps.build-deploy-drpai.outputs.deployment_file_name }}
+          path: ${{ steps.build-deploy-fomo-drpai.outputs.deployment_file_name }}
           if-no-files-found: error
 
   build-matrix:
@@ -108,18 +105,18 @@ jobs:
             cc: aarch64-linux-gnu-gcc
             cxx: aarch64-linux-gnu-g++
             deployment: zip-linux
-          - name: TARGET_RENESAS_RZV2L
-            runner: ubuntu-24.04
-            target_flags: TARGET_RENESAS_RZV2L=1
-            cc: aarch64-linux-gnu-gcc
-            cxx: aarch64-linux-gnu-g++
-            deployment: drp-ai-lib
-          - name: TARGET_RENESAS_RZG2L
-            runner: ubuntu-24.04
-            target_flags: TARGET_RENESAS_RZG2L=1
-            cc: aarch64-linux-gnu-gcc
-            cxx: aarch64-linux-gnu-g++
-            deployment: drp-ai-lib
+          # - name: TARGET_RENESAS_RZV2L
+          #   runner: ubuntu-24.04
+          #   target_flags: TARGET_RENESAS_RZV2L=1
+          #   cc: aarch64-linux-gnu-gcc
+          #   cxx: aarch64-linux-gnu-g++
+          #   deployment: drp-ai-lib
+          # - name: TARGET_RENESAS_RZG2L
+          #   runner: ubuntu-24.04
+          #   target_flags: TARGET_RENESAS_RZG2L=1
+          #   cc: aarch64-linux-gnu-gcc
+          #   cxx: aarch64-linux-gnu-g++
+          #   deployment: drp-ai-lib
           - name: TARGET_TDA4VM
             runner: ubuntu-24.04
             target_flags: TARGET_TDA4VM=1
@@ -177,7 +174,8 @@ jobs:
           fi
 
           if [[ ("$app" == "APP_CAMERA" || "$app" == "APP_VIDEO") && "$target" == "TARGET_LINUX_X86" ]]; then
-            sudo apt-get install -y libopencv-dev
+            sudo apt-get install -y git cmake
+            sh build-opencv-linux.sh
           fi
 
       - name: Install macOS dependencies
