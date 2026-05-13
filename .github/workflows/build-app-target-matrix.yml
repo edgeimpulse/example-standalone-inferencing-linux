@@ -173,7 +173,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          sh build-opencv-linux.sh
+          sh build-opencv-mac.sh
 
       - name: Download deployment artifact (FOMO / TFLite)
         if: matrix.app != 'APP_COLLECT' && matrix.app != 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
