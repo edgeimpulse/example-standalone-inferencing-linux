@@ -1,0 +1,227 @@
+name: Build APP x TARGET matrix
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  prepare-model-artifact:
+    name: Prepare Edge Impulse model artifact
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Build and deploy Edge Impulse model (FOMO / TFLite)
+        id: build-deploy-fomo-tflite
+        uses: edgeimpulse/build-deploy@v2
+        with:
+          project_id: 137095
+          api_key: ${{ secrets['EI_FOMO_API_KEY'] }}
+          impulse_id: 3
+          engine: tflite
+          deployment_type: zip-linux
+
+      - name: Upload deployment artifact (FOMO / TFLite)
+        uses: actions/upload-artifact@v7
+        with:
+          name: edge-impulse-deployment-fomo-tflite
+          path: ${{ steps.build-deploy-fomo-tflite.outputs.deployment_file_name }}
+          if-no-files-found: error
+
+      - name: Build and deploy Edge Impulse model (KWS / TFLite)
+        id: build-deploy-kws-tflite
+        uses: edgeimpulse/build-deploy@v2
+        with:
+          project_id: 3
+          api_key: ${{ secrets['EI_KWS_API_KEY'] }}
+          impulse_id: 1
+          engine: tflite
+          deployment_type: zip-linux
+
+      - name: Upload deployment artifact (KWS / TFLite)
+        uses: actions/upload-artifact@v7
+        with:
+          name: edge-impulse-deployment-kws-tflite
+          path: ${{ steps.build-deploy-kws-tflite.outputs.deployment_file_name }}
+          if-no-files-found: error
+
+  build-matrix:
+    needs: prepare-model-artifact
+    name: ${{ matrix.app }} on ${{ matrix.target.name }}
+    runs-on: ${{ matrix.target.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - APP_COLLECT
+          - APP_CUSTOM
+          - APP_AUDIO
+          - APP_CAMERA
+          - APP_VIDEO
+          - APP_EIM
+        target:
+          - name: TARGET_LINUX_X86
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_X86=1 USE_FULL_TFLITE=1
+            cc: gcc
+            cxx: g++
+            deployment: zip-linux
+          - name: TARGET_LINUX_ARMV7
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1
+            cc: arm-linux-gnueabihf-gcc
+            cxx: arm-linux-gnueabihf-g++
+            deployment: zip-linux
+          - name: TARGET_LINUX_ARMV7_LEGACY
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_ARMV7_LEGACY=1 USE_FULL_TFLITE=1
+            cc: arm-linux-gnueabihf-gcc
+            cxx: arm-linux-gnueabihf-g++
+            deployment: zip-linux
+          - name: TARGET_LINUX_AARCH64
+            runner: ubuntu-24.04
+            target_flags: TARGET_LINUX_AARCH64=1 USE_FULL_TFLITE=1
+            cc: aarch64-linux-gnu-gcc
+            cxx: aarch64-linux-gnu-g++
+            deployment: zip-linux
+          - name: TARGET_MAC_X86_64
+            runner: macos-26-intel
+            target_flags: TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1
+            cc: clang
+            cxx: clang++
+            deployment: zip-linux
+          - name: TARGET_MAC_ARM64
+            runner: macos-26
+            target_flags: TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1
+            cc: clang
+            cxx: clang++
+            deployment: zip-linux
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Validate matrix combination
+        id: validate
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          app='${{ matrix.app }}'
+          target='${{ matrix.target.name }}'
+          supported='true'
+          reason=''
+
+          if [[ "$app" == "APP_AUDIO" && "$target" != "TARGET_LINUX_X86" ]]; then
+            supported='false'
+            reason='Audio app depends on ALSA and is only validated on native Linux x86 in this workflow.'
+          fi
+
+          if [[ "$app" == "APP_CAMERA" && "$target" != "TARGET_LINUX_X86" ]]; then
+            supported='false'
+            reason='Camera app depends on OpenCV and is validated only on native Linux runners in this workflow.'
+          fi
+
+          if [[ "$app" == "APP_VIDEO" && "$target" != "TARGET_LINUX_X86" ]]; then
+            supported='false'
+            reason='Video app depends on OpenCV and is validated only on native Linux runners in this workflow.'
+          fi
+
+          echo "supported=$supported" >> "$GITHUB_OUTPUT"
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+
+      - name: Skip unsupported combination
+        if: steps.validate.outputs.supported != 'true'
+        shell: bash
+        run: |
+          echo "Skipping ${{ matrix.app }} + ${{ matrix.target.name }}"
+          echo "Reason: ${{ steps.validate.outputs.reason }}"
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux' && steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y make clang
+
+          target='${{ matrix.target.name }}'
+          app='${{ matrix.app }}'
+
+          if [[ "$target" == "TARGET_LINUX_ARMV7" || "$target" == "TARGET_LINUX_ARMV7_LEGACY" ]]; then
+            sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+          fi
+
+          if [[ "$target" == "TARGET_LINUX_AARCH64" ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          fi
+
+          if [[ "$app" == "APP_AUDIO" ]]; then
+            sudo apt-get install -y libasound2-dev
+          fi
+
+          if [[ ("$app" == "APP_CAMERA" || "$app" == "APP_VIDEO") && "$target" == "TARGET_LINUX_X86" ]]; then
+            sudo apt-get install -y git cmake
+            sh build-opencv-linux.sh
+          fi
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS' && (matrix.app == 'APP_CAMERA' || matrix.app == 'APP_VIDEO') && steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          brew update
+          brew install opencv
+
+      - name: Download deployment artifact (FOMO / TFLite)
+        if: matrix.app != 'APP_COLLECT' && matrix.app != 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: edge-impulse-deployment-fomo-tflite
+          path: .
+
+      - name: Download deployment artifact (KWS / TFLite)
+        if: matrix.app == 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: edge-impulse-deployment-kws-tflite
+          path: .
+
+      - name: Extract model and SDK
+        if: matrix.app != 'APP_COLLECT' && steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          rm -rf edge-impulse-sdk/ model-parameters/ tflite-model/ temp/
+          mkdir -p temp/
+
+          deployment_file="$(find . -maxdepth 1 -type f -name '*.zip' | head -n 1)"
+          if [[ -z "$deployment_file" ]]; then
+            echo "No deployment zip file found after artifact download"
+            exit 1
+          fi
+
+          unzip -q "$deployment_file" -d temp
+          mv temp/* .
+
+          rm -rf "$deployment_file" temp
+
+      - name: Build
+        if: steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          JOBS=2
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            JOBS="$(nproc)"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            JOBS="$(sysctl -n hw.ncpu)"
+          fi
+
+          ${{ matrix.app }}=1 ${{ matrix.target.target_flags }} make clean
+          ${{ matrix.app }}=1 ${{ matrix.target.target_flags }} make -j"$JOBS" CC=${{ matrix.target.cc }} CXX=${{ matrix.target.cxx }}
