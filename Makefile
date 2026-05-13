@@ -1,3 +1,5 @@
+NAME = linux-impulse-runner
+
 EI_SDK?=edge-impulse-sdk
 PYTHON_CROSS_PATH?=
 
@@ -11,195 +13,52 @@ CFLAGS += -Itflite-model
 CFLAGS += -Ithird_party/
 CFLAGS += -Iutils/
 CFLAGS += -Os
-CFLAGS += -DNDEBUG
-CFLAGS += -DSILENCE_EI_CLASSFIER_OBJECT_DETECTION_COUNT_WARNING=1
+CFLAGS += -DNDEBUG -DINCBIN_SILENCE_BITCODE_WARNING -DSILENCE_EI_CLASSFIER_OBJECT_DETECTION_COUNT_WARNING=1
 CFLAGS += -g
 ifeq (${CC}, clang)
-	CFLAGS += -Wno-asm-operand-widths
+    CFLAGS += -Wno-asm-operand-widths
 endif
 CXXFLAGS += -std=c++17
 LDFLAGS += -lm -lstdc++
+# tflite version may be overridden by included mk files, but default to 2.19.0
+TFLITE_VERSION = 2.19.0
 
-CSOURCES = $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/CommonTables/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/BasicMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/ComplexMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/FastMathFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/SupportFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/MatrixFunctions/*.c) $(wildcard edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c)
-CXXSOURCES = $(wildcard tflite-model/*.cpp) $(wildcard edge-impulse-sdk/dsp/kissfft/*.cpp) $(wildcard edge-impulse-sdk/dsp/dct/*.cpp) $(wildcard ./edge-impulse-sdk/dsp/memory.cpp) $(wildcard edge-impulse-sdk/porting/posix/*.c*) $(wildcard edge-impulse-sdk/porting/mingw32/*.c*)
+CSOURCES =	$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*.c) \
+			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/CommonTables/*.c) \
+			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/BasicMathFunctions/*.c) \
+			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/ComplexMathFunctions/*.c) \
+			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/FastMathFunctions/*.c) \
+			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/SupportFunctions/*.c) \
+			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/MatrixFunctions/*.c) \
+			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c)
+
+CXXSOURCES =	$(wildcard tflite-model/*.cpp) \
+				$(wildcard edge-impulse-sdk/dsp/kissfft/*.cpp) \
+				$(wildcard edge-impulse-sdk/dsp/dct/*.cpp) \
+				$(wildcard ./edge-impulse-sdk/dsp/memory.cpp) \
+				$(wildcard edge-impulse-sdk/porting/posix/*.c*) \
+				$(wildcard edge-impulse-sdk/porting/mingw32/*.c*) \
+				$(wildcard third_party/base64/*.cpp) \
+				$(wildcard third_party/jpeg/*.cpp)
+
 CCSOURCES =
 
-ifeq (${USE_TVM},1)
-
-ifndef TVM_HOME
-$(error TVM_HOME variable not set)
-endif
-
-CFLAGS += -I${TVM_HOME}/include
-CFLAGS += -I${TVM_HOME}/3rdparty/dlpack/include
-CFLAGS += -I${TVM_HOME}/3rdparty/dmlc-core/include
-CFLAGS += -I${TVM_HOME}/3rdparty/compiler-rt
-LDFLAGS += -L${TVM_HOME}/build_runtime/ -ltvm_runtime
-endif
-
-ifeq (${TARGET_RENESAS_RZV2L},1)
-USE_FULL_TFLITE=1
-TARGET_LINUX_AARCH64=1
-endif
-
-ifeq (${TARGET_RENESAS_RZG2L},1)
-USE_FULL_TFLITE=1
-TARGET_LINUX_AARCH64=1
-endif
-
-ifeq (${TARGET_AM68PA},1)
-TARGET_TDA4VM=1
-endif
-
-ifeq (${TARGET_AM62A},1)
-TARGET_TDA4VM=1
-endif
-
-ifeq (${TARGET_AM68A},1)
-TARGET_TDA4VM=1
-endif
-
-ifeq (${TARGET_TDA4VM},1)
-CFLAGS += -I${TIDL_TOOLS_PATH} -I${TIDL_TOOLS_PATH}/osrt_deps
-LDFLAGS +=  -L./tidl-rt/linux-aarch64 -lti_rpmsg_char -lvx_tidl_rt
-LDFLAGS += -lrt
-
-ifeq (${USE_ONNX},1)
-CFLAGS += -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime -I${TIDL_TOOLS_PATH}/osrt_deps/onnxruntime/include/onnxruntime/core/session
-CFLAGS += -DDISABLEFLOAT16 -DXNN_ENABLE=0
-LDFLAGS += -Wl,--no-as-needed -lonnxruntime -ldl -ldlr -lpthread #-lpcre -lffi -lz -lopencv_imgproc -lopencv_imgcodecs -lopencv_core -ltbb -ljpeg -lwebp -lpng16 -ltiff -lyaml-cpp
-
-else
-USE_FULL_TFLITE=1
-TARGET_LINUX_AARCH64=1
-endif
-endif
-
-ifeq (${TARGET_JETSON_ORIN},1)
-TARGET_JETSON_COMMON=1
-TENSORRT_VERSION?=8.5.2
-USE_FULL_TFLITE=1
-TARGET_LINUX_AARCH64=1
-endif
-
-ifeq (${TARGET_JETSON_NANO},1)
-TARGET_JETSON=1
-USE_FULL_TFLITE=1
-TARGET_LINUX_AARCH64=1
-endif
-
-ifeq (${TARGET_JETSON},1)
-TARGET_JETSON_COMMON=1
-TENSORRT_VERSION?=8
-USE_FULL_TFLITE=1
-TARGET_LINUX_AARCH64=1
-endif
-
-ifeq (${USE_QUALCOMM_QNN},1)
-ifndef QNN_SDK_ROOT
-$(error QNN_SDK_ROOT is not set, install QNN Engine Direct and set it to the installation directory)
-endif
-USE_FULL_TFLITE=1
-CFLAGS += -I${QNN_SDK_ROOT}/include
-CFLAGS += -Iedge-impulse-sdk
-CFLAGS += -DEI_CLASSIFIER_USE_QNN_DELEGATES
-ifeq (${TARGET_LINUX_AARCH64},1)
-LDFLAGS += -L${QNN_SDK_ROOT}/lib/aarch64-ubuntu-gcc9.4 -lQnnTFLiteDelegate
-else ifeq (${TARGET_LINUX_X86},1)
-LDFLAGS += -L${QNN_SDK_ROOT}/lib/x86_64-linux-clang -lQnnTFLiteDelegate
-endif
-endif
-
-ifeq (${USE_ETHOS},1)
-CFLAGS += -DEI_ETHOS_LINUX
-CFLAGS += -Iedge-impulse-sdk/third_party/ethos_kernel_driver/include/
-CFLAGS += -Iedge-impulse-sdk/third_party/ethos_driver_library/include
-CXXSOURCES += edge-impulse-sdk/porting/ethos-u-driver-stack-imx/driver_library/src/ethosu.cpp
-LDFLAGS += -lrt
-endif
-
-ifeq (${USE_FULL_TFLITE},1)
-CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
-CFLAGS += -Itensorflow-lite/
-CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/custom/*.cc)
-
-ifeq (${TARGET_LINUX_ARMV7},1)
-LDFLAGS += -L./tflite/linux-armv7 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lflatbuffers -lruy -lXNNPACK -lpthreadpool -lpthread -lcpuinfo -lrt
-endif # TARGET_LINUX_ARMV7
-ifeq (${TARGET_LINUX_AARCH64},1)
-CFLAGS += -DDISABLEFLOAT16
-LDFLAGS += -L./tflite/linux-aarch64 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
-endif # TARGET_LINUX_AARCH64
-ifeq (${TARGET_LINUX_X86},1)
-LDFLAGS += -L./tflite/linux-x86 -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
-endif # TARGET_LINUX_X86
-ifeq (${TARGET_MAC_X86_64},1)
-LDFLAGS += -L./tflite/mac-x86_64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool
-endif # TARGET_MAC_X86_64
-ifeq (${TARGET_MAC_ARM64},1)
-LDFLAGS += -L./tflite/mac-arm64 -ltensorflow-lite -lcpuinfo -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lpthreadpool
-endif # TARGET_MAC_ARM64
+#######################################
+# Include mk files
+#######################################
+include mks/ethos_linux.mk
+include mks/renesas.mk
+include mks/ti.mk
+include mks/nvidia.mk
+include mks/qualcomm.mk
+include mks/memryx.mk
+include mks/tflite.mk
+include mks/akida.mk
+include mks/tflm.mk
 
 ifeq (${LINK_TFLITE_FLEX_LIBRARY},1)
-LDFLAGS += -ltensorflowlite_flex_2.16.1
+    LDFLAGS += -ltensorflowlite_flex_${TFLITE_VERSION}
 endif
-
-else ifeq (${USE_AKIDA},1) # USE_FULL_TFLITE
-CFLAGS += -DEI_CLASSIFIER_USE_FULL_TFLITE=1
-CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES # add more detailed pybind error descriptions
-CFLAGS += -Itensorflow-lite
-CFLAGS += -Iedge-impulse-sdk/third_party/gemmlowp
-LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
-ifeq (${TARGET_LINUX_AARCH64},1)
-CFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --cflags)
-LDFLAGS += -L./tflite/linux-aarch64
-LDFLAGS += $(shell $(PYTHON_CROSS_PATH)python3-config --ldflags --embed)
-else ifeq (${TARGET_LINUX_X86},1) # TARGET_LINUX_AARCH64
-CFLAGS += $(shell python3-config --cflags)
-LDFLAGS += -L./tflite/linux-x86
-LDFLAGS += $(shell python3-config --ldflags --embed)
-endif # TARGET_LINUX_X86
-
-else # not USE_FULL_TFLITE and not USE_AKIDA
-
-CFLAGS += -DTF_LITE_DISABLE_X86_NEON=1
-CSOURCES += edge-impulse-sdk/tensorflow/lite/c/common.c
-CCSOURCES += $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/kernels/internal/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/kernels/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/micro/memory_planner/*.cc) $(wildcard edge-impulse-sdk/tensorflow/lite/core/api/*.cc)
-
-endif # not USE_FULL_TFLITE
-
-ifeq (${USE_MEMRYX},1)
-CFLAGS += -Iedge-impulse-sdk/third_party/gemmlowp
-LDFLAGS += -Wl,--no-as-needed -ldl -ltensorflow-lite -lfarmhash -lfft2d_fftsg -lfft2d_fftsg2d -lruy -lXNNPACK -lcpuinfo -lpthreadpool -lpthread -lrt
-ifeq (${TARGET_LINUX_AARCH64},1)
-$(error MemryX drivers and runtime do not support AARCH64)
-else ifeq (${TARGET_LINUX_X86},1)
-ifdef (${EI_CLASSIFIER_USE_MEMRYX_SOFTWARE},1)
-CFLAGS += $(shell python3-config --cflags)
-CFLAGS += -DPYBIND11_DETAILED_ERROR_MESSAGES
-LDFLAGS += -rdynamic $(shell python3-config --ldflags --embed)
-else
-LDFLAGS += -L./tflite/linux-x86
-LDFLAGS += -lmemx
-endif # USE_MEMRYX_SOFTWARE
-endif # USE_MEMRYX && TARGET_LINUX_X86
-endif # USE_MEMRYX
-
-ifeq (${TARGET_JETSON_COMMON},1)
-TENSORRT_VERSION ?=8
-$(info TENSORRT_VERSION is ${TENSORRT_VERSION})
-ifeq (${TENSORRT_VERSION},8.6.2)
-TRT_LDFLAGS += -lei_debug -Ltflite/linux-jetson-nano/trt8.6.2/
-else ifeq (${TENSORRT_VERSION},8.5.2)
-TRT_LDFLAGS += -lei_debug -Ltflite/linux-jetson-nano/trt8.5.2/
-else ifeq (${TENSORRT_VERSION},8)
-TRT_LDFLAGS += -lei_debug -Ltflite/linux-jetson-nano/trt8/
-else
-$(error Invalid TensorRT version)
-endif # TENSORRT_VERSION
-TRT_LDFLAGS += -lcudart -lnvinfer -lnvonnxparser
-LDFLAGS += $(TRT_LDFLAGS) -lstdc++fs -Ltflite/linux-jetson-nano/ -Wl,--warn-unresolved-symbols,--unresolved-symbols=ignore-in-shared-libs
-endif # TARGET_JETSON_COMMON
 
 ifeq (${APP_CUSTOM},1)
 NAME = custom

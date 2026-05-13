@@ -23,8 +23,8 @@ limitations under the License.
 #include "tensorflow-lite/tensorflow/lite/profiling/telemetry/c/telemetry_setting.h"
 #include "tensorflow-lite/tensorflow/lite/profiling/telemetry/telemetry_status.h"
 
-namespace tflite {
-namespace telemetry {
+namespace tflite::telemetry {
+
 // Telemetry profiler interface.
 // When installed, the telemetry profilers accepts profiler events exported from
 // TFLite runtime profiler instrumentation points, interprets the events
@@ -99,7 +99,6 @@ class TelemetryProfiler : public Profiler {
 TelemetryProfiler* MakeTfLiteTelemetryProfiler(
     TfLiteTelemetryProfilerStruct* profiler);
 
-} // namespace tflite
-} // namespace telemtery
+}  // namespace tflite::telemetry
 
 #endif  // TENSORFLOW_LITE_PROFILING_TELEMETRY_PROFILER_H_

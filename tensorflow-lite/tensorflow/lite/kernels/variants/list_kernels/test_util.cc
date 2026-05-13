@@ -14,10 +14,16 @@ limitations under the License.
 ==============================================================================*/
 #include "tensorflow-lite/tensorflow/lite/kernels/variants/list_kernels/test_util.h"
 
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <optional>
 #include <utility>
+#include <vector>
 
+#include "absl/types/span.h"
+#include "tensorflow-lite/tensorflow/lite/array.h"
+#include "tensorflow-lite/tensorflow/lite/c/common.h"
 #include "tensorflow-lite/tensorflow/lite/core/c/c_api_types.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/kernel_util.h"
 #include "tensorflow-lite/tensorflow/lite/kernels/op_macros.h"

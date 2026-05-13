@@ -20,8 +20,7 @@ limitations under the License.
 
 #include "tensorflow-lite/tensorflow/lite/core/c/c_api_types.h"
 
-namespace tflite {
-namespace telemetry {
+namespace tflite::telemetry {
 
 // The source of a telemetry event. Enum values intentionally follow proto
 // guidelines as they are used for Clearcut logging.
@@ -66,7 +65,6 @@ struct TelemetryStatusCode {
   }
 };
 
-} // namespace tflite
-} // namespace telemetry
+}  // namespace tflite::telemetry
 
 #endif  // TENSORFLOW_LITE_PROFILING_TELEMETRY_TELEMETRY_STATUS_H_

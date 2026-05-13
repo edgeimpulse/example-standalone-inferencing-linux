@@ -248,7 +248,7 @@ To build the application with support for AKD1000 NSoC, you need a Python develo
 1. Install dependencies
     Check if you have an output for `python3-config --cflags` command. If you get `bash: command not found: python3-config`, then try to install it with
     ```
-    $ apt install -y python3-dev`
+    $ apt install -y python3-dev
     ```
     Also, install the Python `akida` library
     ```

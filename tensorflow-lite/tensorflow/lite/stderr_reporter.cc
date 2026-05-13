@@ -17,6 +17,7 @@ limitations under the License.
 #include <stdarg.h>
 
 #include "tensorflow-lite/tensorflow/lite/core/api/error_reporter.h"
+#include "tensorflow-lite/tensorflow/lite/logger.h"
 #include "tensorflow-lite/tensorflow/lite/minimal_logging.h"
 
 namespace tflite {
