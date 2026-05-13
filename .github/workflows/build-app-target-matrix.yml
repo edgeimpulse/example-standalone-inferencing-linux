@@ -16,15 +16,16 @@ jobs:
         id: build-deploy-fomo-tflite
         uses: edgeimpulse/build-deploy@v2.0.0
         with:
-          project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
-          api_key: ${{ secrets['EDGE_IMPULSE_API_KEY'] }}
+          project_id: 137095
+          api_key: ${{ secrets['EI_FOMO_API_KEY'] }}
+          impulse_id: 3
           engine: tflite
           deployment_type: zip-linux
 
       - name: Upload deployment artifact (FOMO / TFLite)
         uses: actions/upload-artifact@v4
         with:
-          name: edge-impulse-deployment-fomo
+          name: edge-impulse-deployment-fomo-tflite
           path: ${{ steps.build-deploy-fomo-tflite.outputs.deployment_file_name }}
           if-no-files-found: error
 
@@ -32,16 +33,34 @@ jobs:
         id: build-deploy-fomo-drpai
         uses: edgeimpulse/build-deploy@v2.0.0
         with:
-          project_id: ${{ secrets['EDGE_IMPULSE_PROJECT_ID'] }}
-          api_key: ${{ secrets['EDGE_IMPULSE_API_KEY'] }}
+          project_id: 137095
+          api_key: ${{ secrets['EI_FOMO_API_KEY'] }}
+          impulse_id: 3
           engine: drp-ai
           deployment_type: drp-ai-lib
 
       - name: Upload deployment artifact (FOMO / DRPAI)
         uses: actions/upload-artifact@v4
         with:
-          name: edge-impulse-deployment-drpai
+          name: edge-impulse-deployment-fomo-drpai
           path: ${{ steps.build-deploy-fomo-drpai.outputs.deployment_file_name }}
+          if-no-files-found: error
+
+      - name: Build and deploy Edge Impulse model (KWS / TFLite)
+        id: build-deploy-kws-tflite
+        uses: edgeimpulse/build-deploy@v2.0.0
+        with:
+          project_id: 3
+          api_key: ${{ secrets['EI_KWS_API_KEY'] }}
+          impulse_id: 1
+          engine: tflite
+          deployment_type: zip-linux
+
+      - name: Upload deployment artifact (KWS / TFLite)
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-impulse-deployment-kws-tflite
+          path: ${{ steps.build-deploy-kws-tflite.outputs.deployment_file_name }}
           if-no-files-found: error
 
   build-matrix:
@@ -232,19 +251,27 @@ jobs:
           echo "Skipping ${{ matrix.app }} + ${{ matrix.target.name }}"
           echo "Reason: ${{ steps.validate.outputs.reason }}"
 
-      - name: Download deployment artifact (FOMO)
-        if: matrix.app != 'APP_COLLECT' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
+      - name: Download deployment artifact (FOMO / TFLite)
+        if: matrix.app != 'APP_COLLECT' && matrix.app != 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: edge-impulse-deployment-fomo
+          name: edge-impulse-deployment-fomo-tflite
           path: .
 
-      - name: Download deployment artifact (DRPAI)
-        if: matrix.app != 'APP_COLLECT' && matrix.target.deployment == 'drp-ai-lib' && steps.validate.outputs.supported == 'true'
+      - name: Download deployment artifact (FOMO / DRPAI)
+        if: matrix.app != 'APP_COLLECT' && matrix.app != 'APP_AUDIO' && matrix.target.deployment == 'drp-ai-lib' && steps.validate.outputs.supported == 'true'
         uses: actions/download-artifact@v4
         with:
-          name: edge-impulse-deployment-drpai
+          name: edge-impulse-deployment-fomo-drpai
           path: .
+
+      - name: Download deployment artifact (KWS / TFLite)
+        if: matrix.app == 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: edge-impulse-deployment-kws-tflite
+          path: .
+
 
       - name: Extract model and SDK
         if: matrix.app != 'APP_COLLECT' && steps.validate.outputs.supported == 'true'
