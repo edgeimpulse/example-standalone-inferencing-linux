@@ -161,50 +161,6 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        shell: bash
-        run: |
-          set -euxo pipefail
-          sudo apt-get update
-          sudo apt-get install -y make clang
-
-          target='${{ matrix.target.name }}'
-          app='${{ matrix.app }}'
-
-          if [[ "$target" == "TARGET_LINUX_ARMV7" || "$target" == "TARGET_LINUX_ARMV7_LEGACY" ]]; then
-            sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-          fi
-
-          if [[ "$target" == "TARGET_LINUX_AARCH64" || \
-                "$target" == "TARGET_RENESAS_RZV2L" || \
-                "$target" == "TARGET_RENESAS_RZG2L" || \
-                "$target" == "TARGET_TDA4VM" || \
-                "$target" == "TARGET_AM62A" || \
-                "$target" == "TARGET_AM68A" || \
-                "$target" == "TARGET_JETSON" || \
-                "$target" == "TARGET_JETSON_ORIN"
-                ]]; then
-            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          fi
-
-          if [[ "$app" == "APP_AUDIO" ]]; then
-            sudo apt-get install -y libasound2-dev
-          fi
-
-          if [[ ("$app" == "APP_CAMERA" || "$app" == "APP_VIDEO") && "$target" == "TARGET_LINUX_X86" ]]; then
-            sudo apt-get install -y git cmake
-            sh build-opencv-linux.sh
-          fi
-
-      - name: Install macOS dependencies
-        if: runner.os == 'macOS' && (matrix.app == 'APP_CAMERA' || matrix.app == 'APP_VIDEO')
-        shell: bash
-        run: |
-          set -euxo pipefail
-          brew update
-          brew install opencv
-
       - name: Validate matrix combination
         id: validate
         shell: bash
@@ -250,6 +206,50 @@ jobs:
         run: |
           echo "Skipping ${{ matrix.app }} + ${{ matrix.target.name }}"
           echo "Reason: ${{ steps.validate.outputs.reason }}"
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux' && steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y make clang
+
+          target='${{ matrix.target.name }}'
+          app='${{ matrix.app }}'
+
+          if [[ "$target" == "TARGET_LINUX_ARMV7" || "$target" == "TARGET_LINUX_ARMV7_LEGACY" ]]; then
+            sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+          fi
+
+          if [[ "$target" == "TARGET_LINUX_AARCH64" || \
+                "$target" == "TARGET_RENESAS_RZV2L" || \
+                "$target" == "TARGET_RENESAS_RZG2L" || \
+                "$target" == "TARGET_TDA4VM" || \
+                "$target" == "TARGET_AM62A" || \
+                "$target" == "TARGET_AM68A" || \
+                "$target" == "TARGET_JETSON" || \
+                "$target" == "TARGET_JETSON_ORIN"
+                ]]; then
+            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          fi
+
+          if [[ "$app" == "APP_AUDIO" ]]; then
+            sudo apt-get install -y libasound2-dev
+          fi
+
+          if [[ ("$app" == "APP_CAMERA" || "$app" == "APP_VIDEO") && "$target" == "TARGET_LINUX_X86" ]]; then
+            sudo apt-get install -y git cmake
+            sh build-opencv-linux.sh
+          fi
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS' && (matrix.app == 'APP_CAMERA' || matrix.app == 'APP_VIDEO') && steps.validate.outputs.supported == 'true'
+        shell: bash
+        run: |
+          set -euxo pipefail
+          brew update
+          brew install opencv
 
       - name: Download deployment artifact (FOMO / TFLite)
         if: matrix.app != 'APP_COLLECT' && matrix.app != 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
