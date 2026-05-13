@@ -120,14 +120,14 @@ jobs:
             reason='Audio app depends on ALSA and is only validated on native Linux x86 in this workflow.'
           fi
 
-          if [[ "$app" == "APP_CAMERA" && "$target" != "TARGET_LINUX_X86" && "$target" != "TARGET_MAC_X86_64" && "$target" != "TARGET_MAC_ARM64" ]]; then
+          if [[ "$app" == "APP_CAMERA" && "$target" != "TARGET_LINUX_X86" ]]; then
             supported='false'
-            reason='Camera app depends on OpenCV and is validated only on native Linux/macOS runners in this workflow.'
+            reason='Camera app depends on OpenCV and is validated only on native Linux runners in this workflow.'
           fi
 
-          if [[ "$app" == "APP_VIDEO" && "$target" != "TARGET_LINUX_X86" && "$target" != "TARGET_MAC_X86_64" && "$target" != "TARGET_MAC_ARM64" ]]; then
+          if [[ "$app" == "APP_VIDEO" && "$target" != "TARGET_LINUX_X86" ]]; then
             supported='false'
-            reason='Video app depends on OpenCV and is validated only on native Linux/macOS runners in this workflow.'
+            reason='Video app depends on OpenCV and is validated only on native Linux runners in this workflow.'
           fi
 
           echo "supported=$supported" >> "$GITHUB_OUTPUT"
