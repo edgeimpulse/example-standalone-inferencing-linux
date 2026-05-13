@@ -29,23 +29,6 @@ jobs:
           path: ${{ steps.build-deploy-fomo-tflite.outputs.deployment_file_name }}
           if-no-files-found: error
 
-      - name: Build and deploy Edge Impulse model (FOMO / DRPAI)
-        id: build-deploy-fomo-drpai
-        uses: edgeimpulse/build-deploy@v2.0.0
-        with:
-          project_id: 137095
-          api_key: ${{ secrets['EI_FOMO_API_KEY'] }}
-          impulse_id: 3
-          engine: drp-ai
-          deployment_type: drp-ai-lib
-
-      - name: Upload deployment artifact (FOMO / DRPAI)
-        uses: actions/upload-artifact@v4
-        with:
-          name: edge-impulse-deployment-fomo-drpai
-          path: ${{ steps.build-deploy-fomo-drpai.outputs.deployment_file_name }}
-          if-no-files-found: error
-
       - name: Build and deploy Edge Impulse model (KWS / TFLite)
         id: build-deploy-kws-tflite
         uses: edgeimpulse/build-deploy@v2.0.0
@@ -102,57 +85,17 @@ jobs:
             cc: aarch64-linux-gnu-gcc
             cxx: aarch64-linux-gnu-g++
             deployment: zip-linux
-        #   - name: TARGET_MAC_X86_64
-        #     runner: macos-13
-        #     target_flags: TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1
-        #     cc: clang
-        #     cxx: clang++
-        #   - name: TARGET_MAC_ARM64
-        #     runner: macos-14
-        #     target_flags: TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1
-        #     cc: clang
-        #     cxx: clang++
-          - name: TARGET_JETSON_ORIN
-            runner: ubuntu-24.04
-            target_flags: TARGET_JETSON_ORIN=1
-            cc: aarch64-linux-gnu-gcc
-            cxx: aarch64-linux-gnu-g++
+          - name: TARGET_MAC_X86_64
+            runner: macos-26-intel
+            target_flags: TARGET_MAC_X86_64=1 USE_FULL_TFLITE=1
+            cc: clang
+            cxx: clang++
             deployment: zip-linux
-          - name: TARGET_JETSON
-            runner: ubuntu-24.04
-            target_flags: TARGET_JETSON=1
-            cc: aarch64-linux-gnu-gcc
-            cxx: aarch64-linux-gnu-g++
-            deployment: zip-linux
-          # - name: TARGET_RENESAS_RZV2L
-          #   runner: ubuntu-24.04
-          #   target_flags: TARGET_RENESAS_RZV2L=1
-          #   cc: aarch64-linux-gnu-gcc
-          #   cxx: aarch64-linux-gnu-g++
-          #   deployment: drp-ai-lib
-          # - name: TARGET_RENESAS_RZG2L
-          #   runner: ubuntu-24.04
-          #   target_flags: TARGET_RENESAS_RZG2L=1
-          #   cc: aarch64-linux-gnu-gcc
-          #   cxx: aarch64-linux-gnu-g++
-          #   deployment: drp-ai-lib
-          - name: TARGET_TDA4VM
-            runner: ubuntu-24.04
-            target_flags: TARGET_TDA4VM=1
-            cc: aarch64-linux-gnu-gcc
-            cxx: aarch64-linux-gnu-g++
-            deployment: zip-linux
-          - name: TARGET_AM62A
-            runner: ubuntu-24.04
-            target_flags: TARGET_AM62A=1
-            cc: aarch64-linux-gnu-gcc
-            cxx: aarch64-linux-gnu-g++
-            deployment: zip-linux
-          - name: TARGET_AM68A
-            runner: ubuntu-24.04
-            target_flags: TARGET_AM68A=1
-            cc: aarch64-linux-gnu-gcc
-            cxx: aarch64-linux-gnu-g++
+          - name: TARGET_MAC_ARM64
+            runner: macos-26
+            target_flags: TARGET_MAC_ARM64=1 USE_FULL_TFLITE=1
+            cc: clang
+            cxx: clang++
             deployment: zip-linux
 
     steps:
@@ -171,16 +114,6 @@ jobs:
           target='${{ matrix.target.name }}'
           supported='true'
           reason=''
-
-          if [[ "$target" == "TARGET_JETSON" || "$target" == "TARGET_JETSON_ORIN" ]]; then
-            supported='false'
-            reason='Jetson builds require TensorRT/CUDA runtime libraries that are not available on GitHub-hosted runners.'
-          fi
-
-          if [[ "$target" == "TARGET_TDA4VM" || "$target" == "TARGET_AM62A" || "$target" == "TARGET_AM68A" ]]; then
-            supported='false'
-            reason='TI TIDL builds require vendor SDK assets (for TIDL_TOOLS_PATH) not available in standard CI runners.'
-          fi
 
           if [[ "$app" == "APP_AUDIO" && "$target" != "TARGET_LINUX_X86" ]]; then
             supported='false'
@@ -222,15 +155,7 @@ jobs:
             sudo apt-get install -y gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
           fi
 
-          if [[ "$target" == "TARGET_LINUX_AARCH64" || \
-                "$target" == "TARGET_RENESAS_RZV2L" || \
-                "$target" == "TARGET_RENESAS_RZG2L" || \
-                "$target" == "TARGET_TDA4VM" || \
-                "$target" == "TARGET_AM62A" || \
-                "$target" == "TARGET_AM68A" || \
-                "$target" == "TARGET_JETSON" || \
-                "$target" == "TARGET_JETSON_ORIN"
-                ]]; then
+          if [[ "$target" == "TARGET_LINUX_AARCH64" ]]; then
             sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
           fi
 
@@ -248,8 +173,7 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          brew update
-          brew install opencv
+          sh build-opencv-linux.sh
 
       - name: Download deployment artifact (FOMO / TFLite)
         if: matrix.app != 'APP_COLLECT' && matrix.app != 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
@@ -258,20 +182,12 @@ jobs:
           name: edge-impulse-deployment-fomo-tflite
           path: .
 
-      - name: Download deployment artifact (FOMO / DRPAI)
-        if: matrix.app != 'APP_COLLECT' && matrix.app != 'APP_AUDIO' && matrix.target.deployment == 'drp-ai-lib' && steps.validate.outputs.supported == 'true'
-        uses: actions/download-artifact@v4
-        with:
-          name: edge-impulse-deployment-fomo-drpai
-          path: .
-
       - name: Download deployment artifact (KWS / TFLite)
         if: matrix.app == 'APP_AUDIO' && matrix.target.deployment == 'zip-linux' && steps.validate.outputs.supported == 'true'
         uses: actions/download-artifact@v4
         with:
           name: edge-impulse-deployment-kws-tflite
           path: .
-
 
       - name: Extract model and SDK
         if: matrix.app != 'APP_COLLECT' && steps.validate.outputs.supported == 'true'
