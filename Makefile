@@ -32,8 +32,7 @@ CSOURCES =	$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/TransformFunctions/*.c) 
 			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/MatrixFunctions/*.c) \
 			$(wildcard edge-impulse-sdk/CMSIS/DSP/Source/StatisticsFunctions/*.c)
 
-CXXSOURCES =	$(wildcard source/*.cpp) \
-				$(wildcard tflite-model/*.cpp) \
+CXXSOURCES =	$(wildcard tflite-model/*.cpp) \
 				$(wildcard edge-impulse-sdk/dsp/kissfft/*.cpp) \
 				$(wildcard edge-impulse-sdk/dsp/dct/*.cpp) \
 				$(wildcard ./edge-impulse-sdk/dsp/memory.cpp) \
