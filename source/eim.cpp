@@ -248,7 +248,7 @@ void json_send_classification_response(int id,
     }
 
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
-    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1 || EI_CLASSIFIER_SORT_TRACKING_ENABLED == 1
 
         // For object tracking we'll create a separate object with traces (we also fill bounding_boxes with the raw output)
         nlohmann::json tracking_res = nlohmann::json::array();
@@ -267,7 +267,7 @@ void json_send_classification_response(int id,
             tracking_res.push_back(tracking_json);
         }
 
-    #endif // EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+    #endif // EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1 || EI_CLASSIFIER_SORT_TRACKING_ENABLED == 1
 
     nlohmann::json bb_res = nlohmann::json::array();
     for (size_t ix = 0; ix < result.bounding_boxes_count; ix++) {
@@ -343,7 +343,7 @@ void json_send_classification_response(int id,
         {"result", {
 #if EI_CLASSIFIER_OBJECT_DETECTION == 1
             {"bounding_boxes", bb_res},
-    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1 || EI_CLASSIFIER_SORT_TRACKING_ENABLED == 1
             {"object_tracking", tracking_res},
     #endif
 #else
@@ -566,7 +566,7 @@ void json_message_handler(rapidjson::Document &msg, char *resp_buffer, size_t re
 
         }
 
-    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1
+    #if EI_CLASSIFIER_OBJECT_TRACKING_ENABLED == 1 || EI_CLASSIFIER_SORT_TRACKING_ENABLED == 1
         const bool has_object_tracking = true;
     #else
         const bool has_object_tracking = false;
