@@ -121,6 +121,8 @@ $ APP_CUSTOM=1 TARGET_LINUX_ARMV7=1 USE_FULL_TFLITE=1 make -j`nproc`
 
 **x86 Linux targets**
 
+> See the [Linux x86_64 with NVIDIA GPU](#linux-x86_64-with-nvidia-gpu) section below for information on enabling NVIDIA GPU acceleration for your Linux x86_64 target.
+
 Build with the following flags:
 
 ```
@@ -355,6 +357,30 @@ For Qualcomm targets that have the Hexagon NPU on board (e.g. Dragonwing QCS6490
     $ APP_EIM=1 TARGET_LINUX_AARCH64=1 USE_QUALCOMM_QNN=1 make -j`nproc`
     ```
 
+### Linux x86_64 with NVIDIA GPU
+
+On Linux x86_64 you can also build with support for TensorRT and CUDA, which
+fully leverages the NVIDIA GPUs with compute capablities: 7.5, 8.0, 8.6, 8.9,
+9.0, 10.0, 10.3, 12.0, or 12.1. See [CUDA
+GPUs](https://developer.nvidia.com/cuda/gpus) to find your GPU's compute
+capability.
+
+To build with TensorRT and NVIDIA GPU support:
+
+1. Ensure the host requirements are met:
+    - `glibc 2.35` or later (and `GLIBCXX_3.4.30` or later).
+    - TensorRT 10.x
+    - CUDA 13.x
+    - NVIDIA Drivers
+    - See our [NVIDIA GPU documentation](https://docs.edgeimpulse.com/hardware/devices/nvidia-gpu) for full details.
+1. Go to the **Deployment** page in the Edge Impulse Studio.
+1. Select the 'TensorRT library', and the 'float32' optimizations.
+1. Build the library and copy the folders into this repository.
+1. Build your application with:
+
+    ```
+    $ APP_CUSTOM=1 TARGET_NVIDIA_GPU_X86=1 make -j
+    ```
 ## Building .eim files
 
 To build Edge Impulse for Linux models ([eim files](https://docs.edgeimpulse.com/docs/edge-impulse-for-linux#eim-models)) that can be used by the Python, Node.js or Go SDKs build with `APP_EIM=1`:
